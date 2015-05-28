@@ -341,14 +341,14 @@ class Example
 
 	def self.hex_faces
 		['a_b_c_d_e_f_a', 'g_h_i_j_k_l_g',
-		'a_b_k_l_a', 'b_c_j_k_b', 'c_d_i_j_c', 'd_e_h_i_d', 'e_f_g_h_e', 'f_a_l_j_f'
+		'a_b_k_l_a', 'b_c_j_k_b', 'c_d_i_j_c', 'd_e_h_i_d', 'e_f_g_h_e', 'f_a_l_g_f'
 		]
 	end
 
 	def self.hex_hcycles
 		['a_b_c_d_e_f_g_h_i_j_k_l_a', 'a_b_c_d_e_h_i_j_k_l_g_f_a', 'd_c_b_a_f_e_h_g_l_k_j_i_d', 
 		'c_b_a_f_e_d_i_h_g_l_k_j_c', 'b_a_f_e_d_c_j_i_h_g_l_k_b', 'a_f_e_d_c_b_k_j_i_h_g_l_a', 
-		'a_b_k_j_c_d_i_h_e_f_j_l_a', 'a_l_k_b_c_j_i_d_e_h_g_f_a'
+		'a_b_k_j_c_d_i_h_e_f_g_l_a', 'a_l_k_b_c_j_i_d_e_h_g_f_a'
 		]
 	end
 
@@ -486,7 +486,7 @@ class Face
 		@name
 	end
 end
-
+	
 class Hcycle
 	def initialize(name)
 		@name = name
