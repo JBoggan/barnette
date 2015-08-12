@@ -33,6 +33,51 @@ As a convention that will simplify merging and division, all faces are labeled i
 
 	end
 
+	def color_edges(coloring)
+		coloring.keys.map{|e| edges[e].set_color(coloring[e])}
+	end
+
+	def current_edge_coloring
+		coloring = {}
+		edges.keys.map{|e| coloring[e] = edges[e].color}
+		return coloring
+	end
+
+	def overall_valid_edge_coloring?
+		nodes.keys.map{|n| valid_edge_coloring?(nodes[n])}.reduce(:&)
+	end
+
+	def valid_edge_coloring?(node)
+		local = node.edges.map{|e| edges[e]}
+		{"red" => 1, "blue" => 1, "green" => 1} == {local[0].color => 1, local[1].color => 1, local[2].color => 1}
+	end
+
+	def swap_color_cycle(edge_a,edge_b)
+		color_a = edge_a.color
+		color_b = edge_b.color
+		colors = [color_a, color_b]
+		puts colors
+		cycle = [edge_a, edge_b]
+		puts cycle
+		current_edge = edge_b.adj_edges.select{|e| colors.include?(edges[e].color) && !cycle.include?(edges[e])}[0]
+		while current_edge != nil	
+			cycle << current_edge
+			current_edge = edge_b.adj_edges.select{|e| colors.include?(edges[e].color) && !cycle.include?(edges[e])}[0]
+			puts cycle
+		end
+		cycle.map{|e| swap_edge_color(e, color_a, color_b)}
+		return cycle.map{|e| e.name}
+	end
+
+	def swap_edge_color(edge, color_a, color_b)
+		case edge.color
+		when color_a
+			edge.set_color(color_b)
+		when color_b
+			edge.set_color(color_a)
+		end
+	end
+
 	def incrementNode
 		@max_node.next!
 	end
@@ -351,9 +396,6 @@ class Example
 		'a_b_k_j_c_d_i_h_e_f_g_l_a', 'a_l_k_b_c_j_i_d_e_h_g_f_a'
 		]
 	end
-
-
-
 end
 
 class Node
@@ -399,8 +441,17 @@ class Edge
 		@adj_faces = []
 		@adj_edges = []
 		@hcycles = []
+		@color = nil
 		#check to see if adj nodes have non-self edges
 		#if so add adjacent edge
+	end
+
+	def set_color(color)
+		@color = color if ['red','blue','green'].include?(color)
+	end
+
+	def color
+		@color
 	end
 
 	def add_hcycle(hcycle)
