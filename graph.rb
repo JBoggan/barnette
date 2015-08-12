@@ -56,14 +56,11 @@ As a convention that will simplify merging and division, all faces are labeled i
 		color_a = edge_a.color
 		color_b = edge_b.color
 		colors = [color_a, color_b]
-		puts colors
 		cycle = [edge_a, edge_b]
-		puts cycle
-		current_edge = edge_b.adj_edges.select{|e| colors.include?(edges[e].color) && !cycle.include?(edges[e])}[0]
+		current_edge = edges[edge_b.adj_edges.select{|e| colors.include?(edges[e].color) && !cycle.include?(edges[e])}[0]]
 		while current_edge != nil	
 			cycle << current_edge
-			current_edge = edge_b.adj_edges.select{|e| colors.include?(edges[e].color) && !cycle.include?(edges[e])}[0]
-			puts cycle
+			current_edge = edges[current_edge.adj_edges.select{|e| colors.include?(edges[e].color) && !cycle.include?(edges[e])}[0]]
 		end
 		cycle.map{|e| swap_edge_color(e, color_a, color_b)}
 		return cycle.map{|e| e.name}
