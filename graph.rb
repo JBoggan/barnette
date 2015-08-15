@@ -53,6 +53,12 @@ As a convention that will simplify merging and division, all faces are labeled i
 	end
 
 	def swap_color_cycle(edge_a,edge_b)
+		cycle = induced_cycle(edge_a, edge_b)
+		cycle.map{|e| swap_edge_color(e, color_a, color_b)}
+		return cycle.map{|e| e.name}
+	end
+
+	def induced_cycle(edge_a, edge_b)
 		color_a = edge_a.color
 		color_b = edge_b.color
 		colors = [color_a, color_b]
@@ -62,8 +68,7 @@ As a convention that will simplify merging and division, all faces are labeled i
 			cycle << current_edge
 			current_edge = edges[current_edge.adj_edges.select{|e| colors.include?(edges[e].color) && !cycle.include?(edges[e])}[0]]
 		end
-		cycle.map{|e| swap_edge_color(e, color_a, color_b)}
-		return cycle.map{|e| e.name}
+		return cycle
 	end
 
 	def swap_edge_color(edge, color_a, color_b)
@@ -74,6 +79,40 @@ As a convention that will simplify merging and division, all faces are labeled i
 			edge.set_color(color_a)
 		end
 	end
+
+	def map_edge_colorings
+		color_hash = {}
+		color_hash[current_edge_coloring.hash.to_s] = current_edge_coloring
+
+	end
+
+	def induced_two_factors
+		two_factors = {redblue: [], redgreen: [], bluegreen: []}
+		coloring = current_edge_coloring
+		redblue_edges = coloring.keys.select{|x| coloring[x] != "green"}
+		redgreen_edges = coloring.keys.select{|x| coloring[x] != "blue"}
+		bluegreen_edges = coloring.keys.select{|x| coloring[x] != "red"}
+		two_factors[:redblue] = determine_cycles(redblue_edges)
+		two_factors[:redgreen] = determine_cycles(redgreen_edges)
+		two_factors[:bluegreen] = determine_cycles(bluegreen_edges)
+		return two_factors
+	end
+
+	def determine_cycles(two_factor)
+		puts "here"
+		cycled_edges = []
+		while !two_factor.empty?
+			puts two_factor.count
+			edge_a = edges[two_factor[0]]
+			edge_b = edges[edge_a.adj_edges.select{|adj| two_factor.include?(adj)}.first]
+			cycle = induced_cycle(edge_a, edge_b).map{|e| e.name}
+			cycled_edges << cycle
+			cycle.map{|e| two_factor.delete(e)}
+		end
+		return cycled_edges
+	end
+
+
 
 	def incrementNode
 		@max_node.next!
