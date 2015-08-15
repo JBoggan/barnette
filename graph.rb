@@ -52,11 +52,11 @@ As a convention that will simplify merging and division, all faces are labeled i
 		{"red" => 1, "blue" => 1, "green" => 1} == {local[0].color => 1, local[1].color => 1, local[2].color => 1}
 	end
 
-	def swap_color_cycle(edge_a,edge_b)
-		cycle = induced_cycle(edge_a, edge_b)
+	def swap_color_cycle(cycle)
+		color_a, color_b = [edges[cycle[0]].color, edges[cycle[1]].color]
 		cycle.map{|e| swap_edge_color(e, color_a, color_b)}
-		return cycle.map{|e| e.name}
 	end
+
 
 	def induced_cycle(edge_a, edge_b)
 		color_a = edge_a.color
@@ -71,7 +71,8 @@ As a convention that will simplify merging and division, all faces are labeled i
 		return cycle
 	end
 
-	def swap_edge_color(edge, color_a, color_b)
+	def swap_edge_color(edge_name, color_a, color_b)
+		edge = edges[edge_name]
 		case edge.color
 		when color_a
 			edge.set_color(color_b)
@@ -99,10 +100,8 @@ As a convention that will simplify merging and division, all faces are labeled i
 	end
 
 	def determine_cycles(two_factor)
-		puts "here"
 		cycled_edges = []
 		while !two_factor.empty?
-			puts two_factor.count
 			edge_a = edges[two_factor[0]]
 			edge_b = edges[edge_a.adj_edges.select{|adj| two_factor.include?(adj)}.first]
 			cycle = induced_cycle(edge_a, edge_b).map{|e| e.name}
@@ -382,6 +381,11 @@ class Example
 
 	def self.cube_hcycles
 		['a_b_c_d_h_g_f_e_a','b_c_d_a_e_h_g_f_b', 'c_d_a_b_f_e_h_g_c', 'd_a_b_c_g_f_e_h_d', 'a_e_f_b_c_g_h_d_a', 'b_f_g_c_d_h_e_a_b']
+	end
+
+	def self.cube_coloring
+		{"a_b"=>"red", "b_c"=>"blue", "c_d"=>"red", "d_a"=>"blue", "e_f"=>"red", "f_g"=>"blue", "g_h"=>"red", "h_e"=>"blue", 
+			"a_e"=>"green", "b_f"=>"green", "c_g"=>"green", "d_h"=>"green"}
 	end
 
 	def self.octo_edges
