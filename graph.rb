@@ -476,7 +476,16 @@ class Example
 
 
 	def self.hetfo_coloring
-		{}
+		{"a_b" => "red", "b_c" => "blue", "c_d" => "red", "d_e" => "blue", "e_f" => "red", "f_g" => "blue", "g_h" => "red", 
+			"h_i" => "blue", "i_j" => "red", "j_a" => "blue", 
+			"a_k" => "green", "k_l" => "red", "k_al" => "blue", "l_m" => "green", "l_am" => "blue", "m_o" => "blue",
+			"m_n" => "red", "o_p" => "green", "o_q" => "red", "n_j" => "green", "n_p" => "blue", "p_r" => "red", "q_r" => "green", 
+			"q_an" => "blue", "r_s" => "blue", "i_s" => "green", "s_t" => "red", "t_u" => "green", "t_ao" => "blue", "u_v" => "red", 
+			"u_ar" => "blue", "v_h" => "green", "v_w" => "blue", "w_g" => "green", "w_x" => "red", "x_y" => "blue", "x_f" => "green", 
+			"y_z" => "green", "y_ar" => "red", "z_aa" => "blue", "z_aq" => "red", "aa_ap" => "green", "aa_ab" => "red", "ab_ac" => "green",
+			"ab_ak" => "blue", "ac_ad" => "red", "ac_aj" => "blue", "ad_ae" => "blue", "ad_ai" => "green", "ae_af" => "red", "ae_e" => "green",
+			"af_d" => "green", "af_ag" => "blue", "ag_c" => "green", "ag_ah" => "red", "ah_b" => "green", "ah_ai" => "blue", "ai_aj" => "red", 
+			"aj_ak" => "green", "ak_al" => "red", "al_am" => "green", "am_an" => "red", "an_ao" => "green", "ao_ap" => "red", "ap_aq" => "blue", "aq_ar" => "green"}
 	end
 end
 
