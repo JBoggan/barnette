@@ -65,6 +65,24 @@ Consider removing specific h-cycle code since we have gone and modeled something
 		cycle.map{|e| swap_edge_color(e, color_a, color_b)}
 	end
 
+	def factor_counts
+		self.induced_two_factors.map{|k,v| {k => v.count}}
+	end
+
+	def factor_sizes
+		self.induced_two_factors.map{|k,v| {k => v.map{|c| c.count}}}
+	end
+
+	def hamiltonian_coloring?
+		self.factor_counts.map{|h| h[:redblue] == 1 || h[:redgreen] == 1 || h[:bluegreen] == 1}.reduce(:|)
+	end
+
+	def random_recolor
+		twocolor = [:redblue, :redgreen, :bluegreen][rand 3]
+		cycles = self.induced_two_factors[twocolor]
+		cycle = cycles[rand cycles.count]
+		self.swap_color_cycle(cycle) 
+	end
 
 	def induced_cycle(edge_a, edge_b)
 		color_a = edge_a.color
@@ -486,6 +504,18 @@ class Example
 			"ab_ak" => "blue", "ac_ad" => "red", "ac_aj" => "blue", "ad_ae" => "blue", "ad_ai" => "green", "ae_af" => "red", "ae_e" => "green",
 			"af_d" => "green", "af_ag" => "blue", "ag_c" => "green", "ag_ah" => "red", "ah_b" => "green", "ah_ai" => "blue", "ai_aj" => "red", 
 			"aj_ak" => "green", "ak_al" => "red", "al_am" => "green", "am_an" => "red", "an_ao" => "green", "ao_ap" => "red", "ap_aq" => "blue", "aq_ar" => "green"}
+	end
+
+	def self.hetfo_hamiltonian_coloring
+		{"a_b"=>"green", "b_c"=>"blue", "c_d"=>"green", "d_e"=>"red", "e_f"=>"green", "f_g"=>"red", "g_h"=>"green", "h_i"=>"blue", 
+			"i_j"=>"green", "j_a"=>"red", "a_k"=>"blue", "k_l"=>"red", "k_al"=>"green", "l_m"=>"blue", "l_am"=>"green", "m_o"=>"red", 
+			"m_n"=>"green", "o_p"=>"green", "o_q"=>"blue", "n_j"=>"blue", "n_p"=>"red", "p_r"=>"blue", "q_r"=>"red", "q_an"=>"green", 
+			"r_s"=>"green", "i_s"=>"red", "s_t"=>"blue", "t_u"=>"red", "t_ao"=>"green", "u_v"=>"blue", "u_ar"=>"green", "v_h"=>"red", 
+			"v_w"=>"green", "w_g"=>"blue", "w_x"=>"red", "x_y"=>"green", "x_f"=>"blue", "y_z"=>"red", "y_ar"=>"blue", "z_aa"=>"green", 
+			"z_aq"=>"blue", "aa_ap"=>"red", "aa_ab"=>"blue", "ab_ac"=>"green", "ab_ak"=>"red", "ac_ad"=>"red", "ac_aj"=>"blue", 
+			"ad_ae"=>"green", "ad_ai"=>"blue", "ae_af"=>"red", "ae_e"=>"blue", "af_d"=>"blue", "af_ag"=>"green", "ag_c"=>"red", 
+			"ag_ah"=>"blue", "ah_b"=>"red", "ah_ai"=>"green", "ai_aj"=>"red", "aj_ak"=>"green", "ak_al"=>"blue", "al_am"=>"red", 
+			"am_an"=>"blue", "an_ao"=>"red", "ao_ap"=>"blue", "ap_aq"=>"green", "aq_ar"=>"red"} 
 	end
 end
 
