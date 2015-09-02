@@ -5,6 +5,14 @@ Notes:
 Faces must be defined by the user since this is computationally very difficult to work out.
 As a convention that will simplify merging and division, all faces are labeled in clockwise orientation
 
+For building a map of all colorings:
+
+Nodes are the .hash of the coloring itself. edges are bidirected and labeled by their swapped cycle
+
+A reverse hash lookup for the colorings would be handy
+
+Consider removing specific h-cycle code since we have gone and modeled something much more general
+
 =end
 
 
@@ -151,12 +159,12 @@ As a convention that will simplify merging and division, all faces are labeled i
 
 
 
-	def initialize(adjacency, face_array, hcycles = nil)
+	def initialize(adjacency, face_array)
 		@max_node = ""
 		@nodes = {}
 		@edges = processEdges(adjacency)
 		@faces = processFaces(face_array)
-		@hcycles = processHcycles(hcycles)
+		#@hcycles = processHcycles(hcycles)
 	end
 
 	def processHcycles(cycle_array)
@@ -435,6 +443,40 @@ class Example
 		'c_b_a_f_e_d_i_h_g_l_k_j_c', 'b_a_f_e_d_c_j_i_h_g_l_k_b', 'a_f_e_d_c_b_k_j_i_h_g_l_a', 
 		'a_b_k_j_c_d_i_h_e_f_g_l_a', 'a_l_k_b_c_j_i_d_e_h_g_f_a'
 		]
+	end
+
+	def self.hex_coloring
+
+	end
+
+	def self.hetfo_edges
+		[["a","b"], ["b","c"], ["c","d"], ["d","e"], ["e","f"], ["f","g"],
+		["g","h"], ["h","i"], ["i","j"], ["j","a"], ["a","k"], ["k","l"],
+		["k","al"], ["l","m"], ["l","am"], ["m","o"], ["m","n"], ["o","p"],
+		["o","q"], ["n","j"], ["n","p"], ["p","r"], ["q","r"], ["q","an"],
+		["r","s"], ["i","s"], ["s","t"], ["t","u"], ["t","ao"], ["u","v"],
+		["u","ar"], ["v","h"], ["v","w"], ["w","g"], ["w","x"], ["x","y"],
+		["x","f"], ["y","z"], ["y","ar"], ["z","aa"], ["z","aq"], ["aa","ap"],
+		["aa","ab"], ["ab","ac"], ["ab","ak"], ["ac","ad"], ["ac","aj"], ["ad","ae"],
+		["ad","ai"], ["ae","af"], ["ae","e"], ["af","d"], ["af","ag"], ["ag","c"],
+		["ag","ah"], ["ah","b"], ["ah","ai"], ["ai","aj"], ["aj","ak"], ["ak","al"],
+		["al","am"], ["am","an"], ["an","ao"], ["ao","ap"], ["ap","aq"], ["aq","ar"]
+		  ]
+	end
+
+	def self.hetfo_faces
+		['a_b_c_d_e_f_g_h_i_j_a', 'a_b_ah_ai_aj_ak_al_k_a', 'k_al_am_l_k', 'l_am_an_q_o_m_l', 'a_k_l_m_n_j_a',
+			'm_o_p_n_m', 'o_q_r_p_o', 'q_an_ao_t_s_r_q', 'ao_ap_aq_ar_u_t_ao', 'u_v_w_x_y_ar_u',
+			'j_n_p_r_s_i_j', 'i_s_t_u_v_h_i', 'h_v_w_g_h', 'g_w_x_f_g', 'f_x_y_z_aa_ab_ac_ad_ae_e_f',
+			'af_d_e_ae_af', 'ag_c_d_af_ag', 'ah_b_c_ag_ah', 'aq_z_y_ar_aq', 'ap_aa_z_aq_ap',
+			'an_am_al_ak_ab_aa_ap_ao_an', 'ak_aj_ac_ab_ak', 'aj_ai_ad_ac_aj', 'ai_ah_ag_af_ae_ad_ai'
+		]
+	end
+
+
+
+	def self.hetfo_coloring
+		{}
 	end
 end
 
