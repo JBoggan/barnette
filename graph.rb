@@ -109,8 +109,8 @@ Consider removing specific h-cycle code since we have gone and modeled something
 
 	def map_edge_colorings
 		color_hash = {}
-		color_hash[current_edge_coloring.hash.to_s] = current_edge_coloring
-
+		color_hash[current_edge_coloring.hash.to_s] = {coloring: current_edge_coloring, }
+		current_edge_coloring
 	end
 
 	def induced_two_factors
@@ -177,12 +177,12 @@ Consider removing specific h-cycle code since we have gone and modeled something
 
 
 
-	def initialize(adjacency, face_array)
+	def initialize(adjacency, face_array, coloring)
 		@max_node = ""
 		@nodes = {}
 		@edges = processEdges(adjacency)
 		@faces = processFaces(face_array)
-		#@hcycles = processHcycles(hcycles)
+		self.color_edges(coloring)
 	end
 
 	def processHcycles(cycle_array)
