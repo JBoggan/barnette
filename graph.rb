@@ -33,12 +33,37 @@ Consider removing specific h-cycle code since we have gone and modeled something
 		@hcycles
 	end
 
+	def chr_graph_nodes
+		@chr_graph_nodes
+	end
+
+	def chr_graph_edges
+		@chr_graph_edges
+	end
+
+	def chr_nodes
+		chr_graph_nodes.keys
+	end
+
+	def chr_edges
+		chr_graph_edges.keys
+	end
+
 	def isBipartite?
 		0 == self.faces.select{|f| f.nodes.count != 0 % 2}
 	end
 
 	def isThreeConnected?
 
+	end
+
+	def randomly_increase_color_graph
+		older = self.current_edge_coloring.hash.to_s
+		self.random_recolor
+		newer = self.current_edge_coloring.hash.to_s
+		chr_graph_edges[older+"#"+newer] = 1
+		chr_graph_edges[newer+"#"+older] = 1
+		chr_graph_nodes[newer] = 1
 	end
 
 	def color_edges(coloring)
@@ -107,11 +132,7 @@ Consider removing specific h-cycle code since we have gone and modeled something
 		end
 	end
 
-	def map_edge_colorings
-		color_hash = {}
-		color_hash[current_edge_coloring.hash.to_s] = {coloring: current_edge_coloring, }
-		current_edge_coloring
-	end
+	
 
 	def induced_two_factors
 		two_factors = {redblue: [], redgreen: [], bluegreen: []}
@@ -183,6 +204,9 @@ Consider removing specific h-cycle code since we have gone and modeled something
 		@edges = processEdges(adjacency)
 		@faces = processFaces(face_array)
 		self.color_edges(coloring)
+		@chr_graph_nodes = {}
+		@chr_graph_nodes[self.current_edge_coloring.hash.to_s] = 1
+		@chr_graph_edges = {}
 	end
 
 	def processHcycles(cycle_array)
