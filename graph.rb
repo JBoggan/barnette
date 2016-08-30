@@ -143,6 +143,16 @@ Consider removing specific h-cycle code since we have gone and modeled something
 		@max_node.next!
 	end
 
+    def nextFourNodes
+		x = [@max_node]
+		x[1] = x[0].next
+		x[2] = x[1].next
+		x[3] = x[2].next
+		return x
+	end
+
+
+
 	def isHamiltonian?
 
 	end
@@ -281,7 +291,76 @@ Consider removing specific h-cycle code since we have gone and modeled something
 		return array[1]+"_"+array[0]
 	end
 
-	def algorithmUp(edge_array)
+	def sameOrientation?(edge_a, edge_b, face)
+        face.include?(edge_a) == face.include?(edge_b)
+	end
+
+	def algorithmUp(edge_a, edge_b)
+		# just make it return a new Graph instead of getting messy in modifying node/face/edge/color relations
+		# so we just need a new adjacency list, new face listing, and a new coloring
+		
+        adj_list = this.edges.keys
+        face_list = this.faces.keys
+        coloring = this.current_edge_coloring
+
+		a = self.edges[edge_a]
+		b = self.edges[edge_b]
+        
+        face = self.faces[(a.faces & b.faces)[0]]
+
+        a1, a4 = a.nodes
+        b1, b4 = b.nodes
+		
+		a2, a3, b2, b3 = nextFourNodes
+        
+        adj_list.delete(edge_a)
+        adj_list.delete(edge_b)
+
+        adj_list.push(a1+'_'+a2)
+        adj_list.push(a2+'_'+a3)
+        adj_list.push(a3+'_'+a4)
+        adj_list.push(b1+'_'+b2)
+        adj_list.push(b2+'_'+b3)
+        adj_list.push(b3+'_'+b4)
+        if (sameOrientation?(edge_a, edge_b, face.name))
+        	adj_list.push(a2+'_'+b3)
+        	adj_list.push(a3+'_'+a2) ##???
+        	face_list.push(a2+'_'+a3+'_'+b2+'_'+b3+'_'+a2)
+
+        else
+			adj_list.push(a2+'_'+b2)
+        	adj_list.push(a3+'_'+a3)
+        	face_list.push(a2+'_'+a3+'_'+b3+'_'+b2+'_'+a2)
+
+        end
+
+        ##adj_list good to go
+        ##face list is a little harder
+ 
+        ## find faces with edge_a and edge_b and expand them
+        
+        ###no do this for the other face
+        oriented_a = face.includes?(edge_a) ? edge_a : self.reverseEdgeName(edge_a)
+        oriented_b = face.includes?(edge_b) ? edge_b : self.reverseEdgeName(edge_b)
+
+
+        face_list.select{|f| f.includes?(oriented_a)}.map{|f| f.sub(oriented_a, a1+'_'+a2+'_'+a3+'_'+a4)}
+        face_list.select{|f| f.includes?(oriented_b)}.map{|f| f.sub(oriented_b, b1+'_'+b2+'_'+b3+'_'+b4)}
+
+        
+
+        #cut face with both in two after expansion
+        
+
+        big_face = face_list.select{|f| f.includes?(edge_a) && f.includes?(edge_b)}[0]
+        face_list.remove(big_face)
+        
+
+
+
+        
+        
+        
 		#edge_array.map{|e| segmentEdge(e)}
 		#connectSegments
 	end
