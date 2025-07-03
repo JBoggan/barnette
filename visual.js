@@ -169,8 +169,11 @@ var drag = d3.behavior.drag()
       .attr("class", "link")
       .style("stroke", function(d) {
         return d.col;
-       });
-      //.on("click", clickCycle);
+       })
+      .style("stroke-width", 2)
+      .on("click", function(d) {
+        selectEdge(d3.select(this), d);
+      });
 
 
 
@@ -311,12 +314,222 @@ function segmentsIntersect(p1, q1, p2, q2) {
     return false; // Doesn't fall in any of the above cases
 }
 
+// Global variables for edge selection
+var selectedEdges = [];
+var nextNodeId = 9; // Start after existing nodes
+
 document.addEventListener('DOMContentLoaded', (event) => {
     // Automatically calculate and display all three cycle types when the page loads
     displayTwoColorAlternatingCycles('red', 'blue', 'redBlueCycles');
     displayTwoColorAlternatingCycles('red', 'green', 'redGreenCycles');
     displayTwoColorAlternatingCycles('blue', 'green', 'blueGreenCycles');
+    
+    // Add transform button event listener
+    const transformBtn = document.getElementById('transformBtn');
+    if (transformBtn) {
+        transformBtn.addEventListener('click', performTransformation);
+    }
 });
+
+function selectEdge(edgeElement, edgeData) {
+    const index = selectedEdges.findIndex(e => e === edgeData);
+    
+    if (index === -1) {
+        // Add edge to selection if we have less than 2
+        if (selectedEdges.length < 2) {
+            selectedEdges.push(edgeData);
+            edgeElement.style("stroke-width", 6)
+                      .style("filter", "drop-shadow(0 0 8px " + edgeData.col + ")");
+        }
+    } else {
+        // Remove edge from selection
+        selectedEdges.splice(index, 1);
+        edgeElement.style("stroke-width", 2)
+                  .style("filter", "none");
+    }
+    
+    updateSelectionInfo();
+}
+
+function updateSelectionInfo() {
+    const infoDiv = document.getElementById('selectionInfo');
+    if (selectedEdges.length === 0) {
+        infoDiv.textContent = "Select up to 2 edges to transform";
+    } else if (selectedEdges.length === 1) {
+        const edge = selectedEdges[0];
+        infoDiv.textContent = `Selected: ${edge.source.name}-${edge.target.name}`;
+    } else {
+        const edge1 = selectedEdges[0];
+        const edge2 = selectedEdges[1];
+        infoDiv.textContent = `Selected: ${edge1.source.name}-${edge1.target.name}, ${edge2.source.name}-${edge2.target.name}`;
+    }
+}
+
+function getNextNodeName() {
+    const existingNames = json.nodes.map(n => n.name);
+    const letters = 'abcdefghijklmnopqrstuvwxyz';
+    
+    // Find the highest letter used
+    let maxLetter = 'a';
+    existingNames.forEach(name => {
+        if (name.length === 1 && letters.indexOf(name) > letters.indexOf(maxLetter)) {
+            maxLetter = name;
+        }
+    });
+    
+    // Generate next 4 names
+    const nextNames = [];
+    let currentIndex = letters.indexOf(maxLetter) + 1;
+    
+    for (let i = 0; i < 4; i++) {
+        if (currentIndex < letters.length) {
+            nextNames.push(letters[currentIndex]);
+            currentIndex++;
+        } else {
+            // If we run out of single letters, use double letters
+            const doubleLetterIndex = i - (letters.length - letters.indexOf(maxLetter) - 1);
+            const firstChar = letters[Math.floor(doubleLetterIndex / 26)];
+            const secondChar = letters[doubleLetterIndex % 26];
+            nextNames.push(firstChar + secondChar);
+        }
+    }
+    
+    return nextNames;
+}
+
+function performTransformation() {
+    if (selectedEdges.length !== 2) {
+        alert("Please select exactly 2 edges to transform");
+        return;
+    }
+    
+    const edge1 = selectedEdges[0];
+    const edge2 = selectedEdges[1];
+    
+    // Get the 4 nodes involved in the transformation
+    const a = edge1.source;
+    const b = edge1.target;
+    const c = edge2.source;
+    const d = edge2.target;
+    
+    // Generate names for the 4 new nodes
+    const newNames = getNextNodeName();
+    const i = newNames[0];
+    const j = newNames[1];
+    const k = newNames[2];
+    const l = newNames[3];
+    
+    // Create 4 new nodes
+    const newNodeI = { id: nextNodeId++, name: i, group: 0, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    const newNodeJ = { id: nextNodeId++, name: j, group: 0, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    const newNodeK = { id: nextNodeId++, name: k, group: 0, x: (c.x + d.x) / 2, y: (c.y + d.y) / 2 };
+    const newNodeL = { id: nextNodeId++, name: l, group: 0, x: (c.x + d.x) / 2, y: (c.y + d.y) / 2 };
+    
+    // Add new nodes to the graph
+    json.nodes.push(newNodeI, newNodeJ, newNodeK, newNodeL);
+    
+    // Remove the selected edges
+    const edge1Index = edges.indexOf(edge1);
+    const edge2Index = edges.indexOf(edge2);
+    if (edge1Index > -1) edges.splice(edge1Index, 1);
+    if (edge2Index > -1) edges.splice(edge2Index, 1);
+    
+    // Remove edges from json.links as well
+    const link1Index = json.links.findIndex(l => 
+        (l.source === edge1.source.id && l.target === edge1.target.id) ||
+        (l.source === edge1.target.id && l.target === edge1.source.id)
+    );
+    const link2Index = json.links.findIndex(l => 
+        (l.source === edge2.source.id && l.target === edge2.target.id) ||
+        (l.source === edge2.target.id && l.target === edge2.source.id)
+    );
+    if (link1Index > -1) json.links.splice(link1Index, 1);
+    if (link2Index > -1) json.links.splice(link2Index, 1);
+    
+    // Create the 8 new edges
+    const newEdges = [
+        { source: a, target: newNodeI, col: "green" },
+        { source: newNodeI, target: newNodeJ, col: "red" },
+        { source: newNodeJ, target: b, col: "green" },
+        { source: newNodeI, target: newNodeK, col: "blue" },
+        { source: newNodeJ, target: newNodeL, col: "blue" },
+        { source: c, target: newNodeK, col: "green" },
+        { source: newNodeK, target: newNodeL, col: "red" },
+        { source: newNodeL, target: d, col: "green" }
+    ];
+    
+    // Add new edges to the graph
+    edges.push(...newEdges);
+    
+    // Add new edges to json.links
+    newEdges.forEach(edge => {
+        json.links.push({
+            source: edge.source.id,
+            target: edge.target.id,
+            col: edge.col
+        });
+    });
+    
+    // Clear selection
+    selectedEdges = [];
+    updateSelectionInfo();
+    
+    // Redraw the entire graph
+    redrawGraph();
+    
+    // Recalculate all cycles
+    recalculateAllCycles();
+}
+
+function redrawGraph() {
+    // Remove existing elements
+    svg.selectAll(".link").remove();
+    svg.selectAll(".node").remove();
+    svg.selectAll("text").filter(function() { return d3.select(this).attr("text-anchor") === "middle"; }).remove();
+    
+    // Redraw links
+    link = svg.selectAll("link")
+        .data(edges)
+      .enter().append("line")
+        .attr("class", "link")
+        .style("stroke", function(d) { return d.col; })
+        .style("stroke-width", 2)
+        .on("click", function(d) { selectEdge(d3.select(this), d); });
+    
+    // Redraw nodes
+    node = svg.selectAll("node")
+        .data(json.nodes)
+      .enter().append("g")
+        .attr("class", "node")
+        .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+        .style("fill", function(d) { return fill(d.group); })
+        .on("dblclick", dblclick)
+        .call(drag);
+    
+    node.append("circle").attr("r", 5);
+    node.append("text")
+        .attr("dx", 12)
+        .attr("dy", ".35em")
+        .text(function(d) { return d.name });
+    
+    // Redraw edge labels
+    labels = svg.selectAll('text')
+      .data(edges)
+    .enter().append('text')
+      .attr("x", function(d) { return (d.source.x + d.target.x + 10) / 2; }) 
+      .attr("y", function(d) { return (d.source.y + d.target.y + 10) / 2; }) 
+      .attr("text-anchor", "middle") 
+      .text(function(d) { return d.count; });
+    
+    // Set initial positions
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+        
+    labels.attr("x", function(d) { return (d.source.x + d.target.x + 10) / 2; }) 
+        .attr("y", function(d) { return (d.source.y + d.target.y + 10) / 2; });
+}
 
 function displayTwoColorAlternatingCycles(color1, color2, containerId) {
     const containerDiv = document.getElementById(containerId);
