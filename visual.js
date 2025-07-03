@@ -12,42 +12,58 @@ var json = {
     {
       "id": 1,
       "name": "a",
-      "group": 0
+      "group": 0,
+      "x": 200,
+      "y": 200
     },
     {
       "id": 2,
       "name": "b",
-      "group": 2
+      "group": 2,
+      "x": 400,
+      "y": 200
     },
     {
       "id": 3,
       "name": "c",
-      "group": 0
+      "group": 0,
+      "x": 400,
+      "y": 400
     },
     {
       "id": 4,
       "name": "d",
-      "group": 0
+      "group": 0,
+      "x": 200,
+      "y": 400
     },
     {
       "id": 5,
       "name": "e",
-      "group": 1
+      "group": 1,
+      "x": 250,
+      "y": 250
     },
     {
       "id": 6,
       "name": "f",
-      "group": 0
+      "group": 0,
+      "x": 350,
+      "y": 250
     },
     {
       "id": 7,
       "name": "g",
-      "group": 0
+      "group": 0,
+      "x": 350,
+      "y": 350
     },
     {
       "id": 8,
       "name": "h",
-      "group": 1
+      "group": 1,
+      "x": 250,
+      "y": 350
     }
   ], "links":[    
       {
@@ -125,18 +141,27 @@ json.links.forEach(function(e) {
     edges.push({source: sourceNode, target: targetNode, col: col});
 });
 
-var force = d3.layout.force()
-    .gravity(.05)
-    .distance(100)
-    .charge(-100)
-    .size([width, height]);
-var drag = force.drag()
-    .on("dragstart", dragstart);
-
-  force
-      .nodes(json.nodes)
-      .links(edges)
-      .start();
+// Create a custom drag behavior without force simulation
+var drag = d3.behavior.drag()
+    .on("drag", function(d) {
+        d.x = d3.event.x;
+        d.y = d3.event.y;
+        
+        // Update the visual position of the node
+        d3.select(this).attr("transform", "translate(" + d.x + "," + d.y + ")");
+        
+        // Update connected edges
+        link.filter(function(l) { return l.source === d || l.target === d; })
+            .attr("x1", function(l) { return l.source.x; })
+            .attr("y1", function(l) { return l.source.y; })
+            .attr("x2", function(l) { return l.target.x; })
+            .attr("y2", function(l) { return l.target.y; });
+            
+        // Update edge labels
+        labels.filter(function(l) { return l.source === d || l.target === d; })
+            .attr("x", function(l) { return (l.source.x + l.target.x + 10) / 2; })
+            .attr("y", function(l) { return (l.source.y + l.target.y + 10) / 2; });
+    });
 
   var link = svg.selectAll("link")
       .data(edges)
@@ -154,11 +179,11 @@ var drag = force.drag()
       .data(json.nodes)
       .enter().append("g")
       .attr("class", "node")
+      .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
       .style("fill", function(d) {
-        //return d3.select('input[name="dataset"]:checked').node().value;
         return fill(d.group);
        }).on("dblclick", dblclick)
-      .call(force.drag);;;
+      .call(drag);
 
 /*
   node.append("image")
@@ -185,66 +210,14 @@ var drag = force.drag()
     .text(function(d) {return d.count;}); 
 
 
-  force.on("tick", function() {
-    link.attr("x1", function(d) { return d.source.x; })
-        .attr("y1", function(d) { return d.source.y; })
-        .attr("x2", function(d) { return d.target.x; })
-        .attr("y2", function(d) { return d.target.y; });
-
-    node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+  // Set initial positions for links and labels
+  link.attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
       
-      labels.attr("x", function(d) { return (d.source.x + d.target.x + 10) / 2; }) 
-        .attr("y", function(d) { return (d.source.y + d.target.y+ 10) / 2; }) 
-
-    // Edge crossing prevention
-    var repulsionStrength = 0.5; // Adjust as needed
-    for (var i = 0; i < edges.length; i++) {
-        for (var j = i + 1; j < edges.length; j++) {
-            var edge1 = edges[i];
-            var edge2 = edges[j];
-
-            // Ensure edges don't share a common node
-            if (edge1.source === edge2.source || edge1.source === edge2.target ||
-                edge1.target === edge2.source || edge1.target === edge2.target) {
-                continue;
-            }
-
-            if (segmentsIntersect(edge1.source, edge1.target, edge2.source, edge2.target)) {
-                // Apply a simple repulsive force
-                // Push edge1's nodes away from edge2's nodes and vice-versa
-                // This is a very basic approach and might need refinement
-
-                var dx = edge2.source.x - edge1.source.x;
-                var dy = edge2.source.y - edge1.source.y;
-                var dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist === 0) dist = 0.0000001; // prevent division by zero
-                var forceX = (dx / dist) * repulsionStrength;
-                var forceY = (dy / dist) * repulsionStrength;
-
-                // Apply force to edge1's source and target away from edge2's source
-                if (!edge1.source.fixed) {
-                    edge1.source.x -= forceX;
-                    edge1.source.y -= forceY;
-                }
-                if (!edge1.target.fixed) {
-                    edge1.target.x -= forceX;
-                    edge1.target.y -= forceY;
-                }
-
-                // Apply force to edge2's source and target away from edge1's source
-                if (!edge2.source.fixed) {
-                    edge2.source.x += forceX;
-                    edge2.source.y += forceY;
-                }
-                 if (!edge2.target.fixed) {
-                    edge2.target.x += forceX;
-                    edge2.target.y += forceY;
-                }
-            }
-        }
-    }
-      
-  });
+  labels.attr("x", function(d) { return (d.source.x + d.target.x + 10) / 2; }) 
+      .attr("y", function(d) { return (d.source.y + d.target.y + 10) / 2; });
 
 
 
@@ -287,9 +260,7 @@ var drag = force.drag()
   d3.select(this).classed("fixed", d.fixed = false);
 }
 
-function dragstart(d) {
-  d3.select(this).classed("fixed", d.fixed = true);
-}
+
 
 // Helper function to check if point q lies on segment pr
 function onSegment(p, q, r) {
