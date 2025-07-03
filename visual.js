@@ -446,32 +446,25 @@ function dfsFindCycles(currentNode, targetNode, currentPath, expectedColor, othe
 
 function uniqueCycles(cycles) {
     const unique = [];
-    const seenSignatures = new Set();
+    const seenNodes = new Set();
 
     cycles.forEach(cycle => {
         if (cycle.length === 0) return;
         
-        // Create a normalized signature by finding the lexicographically smallest starting point
-        let minIndex = 0;
-        for (let i = 1; i < cycle.length; i++) {
-            if (cycle[i].name < cycle[minIndex].name) {
-                minIndex = i;
-            }
+        // Check if the first node of this cycle has been seen before
+        const firstNodeName = cycle[0].name;
+        if (seenNodes.has(firstNodeName)) {
+            // We've already seen a cycle starting with this node, so skip this cycle
+            return;
         }
         
-        // Create the cycle starting from the lexicographically smallest node
-        const normalizedCycle = [...cycle.slice(minIndex), ...cycle.slice(0, minIndex)];
-        const signature = normalizedCycle.map(n => n.name).join('-');
+        // Add all nodes in this cycle to the seen set
+        cycle.forEach(node => {
+            seenNodes.add(node.name);
+        });
         
-        // Also check the reverse
-        const reverseSignature = [...normalizedCycle].reverse().map(n => n.name).join('-');
-        
-        // If we haven't seen either signature, add this cycle
-        if (!seenSignatures.has(signature) && !seenSignatures.has(reverseSignature)) {
-            unique.push(cycle);
-            seenSignatures.add(signature);
-            seenSignatures.add(reverseSignature);
-        }
+        // Add this cycle to our unique cycles
+        unique.push(cycle);
     });
     
     return unique;
