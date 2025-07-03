@@ -425,25 +425,20 @@ function dfsFindCycles(currentNode, targetNode, currentPath, expectedColor, othe
         // Check if edge color matches expected color
         if (edgeColor !== expectedColor) continue;
         
-        const edgeSignature = [currentNode.id, neighborNode.id].sort().join('-');
-        //if (visitedEdges.has(edgeSignature)) continue; // Avoid re-traversing the same edge in the same path immediately
-
-        if (neighborNode.id === targetNode.id) { // Cycle detected
-            if (currentPath.length > 1) { // Ensure cycle has at least 2 edges
-                 // Path must be even length to correctly alternate back to start node with the 'otherColor'
-                if (currentPath.length % 2 === 0) { 
-                    foundCycles.push([...currentPath]);
-                }
+        // Check if we've reached the target node (completing a cycle)
+        if (neighborNode.id === targetNode.id && currentPath.length > 1) {
+            // Ensure the cycle has even length to properly alternate colors
+            if (currentPath.length % 2 === 0) { 
+                foundCycles.push([...currentPath]);
             }
-            // Continue search for longer cycles, don't stop here
+            // Continue searching for longer cycles
         }
 
-        // If neighbor is not already in the current path (avoid trivial cycles on same edge back and forth)
+        // Only continue if the neighbor is not already in the current path
+        // This ensures each node appears only once in the cycle
         if (!currentPath.find(pathNode => pathNode.id === neighborNode.id)) {
             currentPath.push(neighborNode);
-            //visitedEdges.add(edgeSignature);
             dfsFindCycles(neighborNode, targetNode, currentPath, otherColor, expectedColor, adj, foundCycles, visitedEdges);
-            //visitedEdges.delete(edgeSignature);
             currentPath.pop(); // Backtrack
         }
     }
@@ -455,28 +450,30 @@ function uniqueCycles(cycles) {
 
     cycles.forEach(cycle => {
         if (cycle.length === 0) return;
-        // Normalize the cycle: find the smallest node ID and rotate the cycle to start with it.
-        // Then convert to a string signature.
-        let minNodeId = cycle[0].id;
-        let minNodeIndex = 0;
+        
+        // Create a normalized signature by finding the lexicographically smallest starting point
+        let minIndex = 0;
         for (let i = 1; i < cycle.length; i++) {
-            if (cycle[i].id < minNodeId) {
-                minNodeId = cycle[i].id;
-                minNodeIndex = i;
+            if (cycle[i].name < cycle[minIndex].name) {
+                minIndex = i;
             }
         }
-        const normalizedCycle = [...cycle.slice(minNodeIndex), ...cycle.slice(0, minNodeIndex)];
         
-        // Create two signatures: one for forward, one for reverse to handle A->B->C and C->B->A as same
-        const signature1 = normalizedCycle.map(n => n.id).join('-');
-        const signature2 = [...normalizedCycle].reverse().map(n => n.id).join('-');
-
-        if (!seenSignatures.has(signature1) && !seenSignatures.has(signature2)) {
-            unique.push(normalizedCycle);
-            seenSignatures.add(signature1);
-            seenSignatures.add(signature2);
+        // Create the cycle starting from the lexicographically smallest node
+        const normalizedCycle = [...cycle.slice(minIndex), ...cycle.slice(0, minIndex)];
+        const signature = normalizedCycle.map(n => n.name).join('-');
+        
+        // Also check the reverse
+        const reverseSignature = [...normalizedCycle].reverse().map(n => n.name).join('-');
+        
+        // If we haven't seen either signature, add this cycle
+        if (!seenSignatures.has(signature) && !seenSignatures.has(reverseSignature)) {
+            unique.push(cycle);
+            seenSignatures.add(signature);
+            seenSignatures.add(reverseSignature);
         }
     });
+    
     return unique;
 }
 
@@ -512,5 +509,15 @@ function swapCycleColors(cycle, color1, color2) {
     link.style("stroke", function(d) {
         return d.col;
     });
+    
+    // Recalculate all three cycle types after the color swap
+    recalculateAllCycles();
+}
+
+function recalculateAllCycles() {
+    // Recalculate and display cycles for all three color combinations
+    displayTwoColorAlternatingCycles('red', 'blue', 'redBlueCycles');
+    displayTwoColorAlternatingCycles('red', 'green', 'redGreenCycles');
+    displayTwoColorAlternatingCycles('blue', 'green', 'blueGreenCycles');
 }
 
