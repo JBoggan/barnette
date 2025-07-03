@@ -329,6 +329,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
     if (transformBtn) {
         transformBtn.addEventListener('click', performTransformation);
     }
+    
+    // Initialize debug info
+    updateDebugInfo();
 });
 
 function selectEdge(edgeElement, edgeData) {
@@ -363,6 +366,24 @@ function updateSelectionInfo() {
         const edge2 = selectedEdges[1];
         infoDiv.textContent = `Selected: ${edge1.source.name}-${edge1.target.name}, ${edge2.source.name}-${edge2.target.name}`;
     }
+    
+    updateDebugInfo();
+}
+
+function updateDebugInfo() {
+    const debugDiv = document.getElementById('debugContent');
+    if (!debugDiv) return;
+    
+    let debugText = `Nodes: ${json.nodes.map(n => n.name).join(', ')}\n\n`;
+    debugText += `Edges (${json.links.length}):\n`;
+    
+    json.links.forEach((link, index) => {
+        const sourceNode = json.nodes.find(n => n.id === link.source);
+        const targetNode = json.nodes.find(n => n.id === link.target);
+        debugText += `${index}: ${sourceNode.name}-${targetNode.name} (${link.col})\n`;
+    });
+    
+    debugDiv.textContent = debugText;
 }
 
 function getNextNodeName() {
@@ -428,23 +449,73 @@ function performTransformation() {
     // Add new nodes to the graph
     json.nodes.push(newNodeI, newNodeJ, newNodeK, newNodeL);
     
-    // Remove the selected edges
+    // Remove the selected edges from the edges array
     const edge1Index = edges.indexOf(edge1);
     const edge2Index = edges.indexOf(edge2);
     if (edge1Index > -1) edges.splice(edge1Index, 1);
     if (edge2Index > -1) edges.splice(edge2Index, 1);
     
-    // Remove edges from json.links as well
-    const link1Index = json.links.findIndex(l => 
-        (l.source === edge1.source.id && l.target === edge1.target.id) ||
-        (l.source === edge1.target.id && l.target === edge1.source.id)
-    );
-    const link2Index = json.links.findIndex(l => 
-        (l.source === edge2.source.id && l.target === edge2.target.id) ||
-        (l.source === edge2.target.id && l.target === edge2.source.id)
-    );
-    if (link1Index > -1) json.links.splice(link1Index, 1);
-    if (link2Index > -1) json.links.splice(link2Index, 1);
+    // Debug: Log what we're trying to remove
+    console.log("Selected edges to remove:");
+    console.log("Edge1:", edge1.source.name + "-" + edge1.target.name, "Color:", edge1.col);
+    console.log("Edge2:", edge2.source.name + "-" + edge2.target.name, "Color:", edge2.col);
+    
+    console.log("Current json.links before removal:");
+    json.links.forEach((link, index) => {
+        const sourceNode = json.nodes.find(n => n.id === link.source);
+        const targetNode = json.nodes.find(n => n.id === link.target);
+        console.log(`Link ${index}: ${sourceNode.name}-${targetNode.name}, Color: ${link.col}`);
+    });
+    
+    // Remove the exact selected edges from json.links
+    // We need to find the exact links that correspond to our selected edges
+    const link1Index = json.links.findIndex(l => {
+        // Check if this link corresponds to edge1
+        const sourceNode = json.nodes.find(n => n.id === l.source);
+        const targetNode = json.nodes.find(n => n.id === l.target);
+        const matches = (sourceNode === edge1.source && targetNode === edge1.target) ||
+                       (sourceNode === edge1.target && targetNode === edge1.source);
+        if (matches) {
+            console.log("Found edge1 match at index", json.links.indexOf(l), ":", sourceNode.name + "-" + targetNode.name, "Color:", l.col);
+        }
+        return matches;
+    });
+    
+    const link2Index = json.links.findIndex(l => {
+        // Check if this link corresponds to edge2
+        const sourceNode = json.nodes.find(n => n.id === l.source);
+        const targetNode = json.nodes.find(n => n.id === l.target);
+        const matches = (sourceNode === edge2.source && targetNode === edge2.target) ||
+                       (sourceNode === edge2.target && targetNode === edge2.source);
+        if (matches) {
+            console.log("Found edge2 match at index", json.links.indexOf(l), ":", sourceNode.name + "-" + targetNode.name, "Color:", l.col);
+        }
+        return matches;
+    });
+    
+    console.log("Removing links at indices:", link1Index, link2Index);
+    
+    if (link1Index > -1) {
+        const removedLink = json.links[link1Index];
+        const sourceNode = json.nodes.find(n => n.id === removedLink.source);
+        const targetNode = json.nodes.find(n => n.id === removedLink.target);
+        console.log("Removed link1:", sourceNode.name + "-" + targetNode.name, "Color:", removedLink.col);
+        json.links.splice(link1Index, 1);
+    }
+    if (link2Index > -1) {
+        const removedLink = json.links[link2Index];
+        const sourceNode = json.nodes.find(n => n.id === removedLink.source);
+        const targetNode = json.nodes.find(n => n.id === removedLink.target);
+        console.log("Removed link2:", sourceNode.name + "-" + targetNode.name, "Color:", removedLink.col);
+        json.links.splice(link2Index, 1);
+    }
+    
+    console.log("json.links after removal:");
+    json.links.forEach((link, index) => {
+        const sourceNode = json.nodes.find(n => n.id === link.source);
+        const targetNode = json.nodes.find(n => n.id === link.target);
+        console.log(`Link ${index}: ${sourceNode.name}-${targetNode.name}, Color: ${link.col}`);
+    });
     
     // Create the 8 new edges
     const newEdges = [
