@@ -441,10 +441,10 @@ function performTransformation() {
     const l = newNames[3];
     
     // Create 4 new nodes
-    const newNodeI = { id: nextNodeId++, name: i, group: 0, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    const newNodeJ = { id: nextNodeId++, name: j, group: 0, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    const newNodeK = { id: nextNodeId++, name: k, group: 0, x: (c.x + d.x) / 2, y: (c.y + d.y) / 2 };
-    const newNodeL = { id: nextNodeId++, name: l, group: 0, x: (c.x + d.x) / 2, y: (c.y + d.y) / 2 };
+    const newNodeI = { id: nextNodeId++, name: i, group: 0, x: (2*a.x + b.x) / 3, y: (2*a.y + b.y) / 3 };
+    const newNodeJ = { id: nextNodeId++, name: j, group: 0, x: (a.x + 2*b.x) / 3, y: (a.y + 2*b.y) / 3 };
+    const newNodeK = { id: nextNodeId++, name: k, group: 0, x: (2*c.x + d.x) / 3, y: (2*c.y + d.y) / 3 };
+    const newNodeL = { id: nextNodeId++, name: l, group: 0, x: (c.x + 2*d.x) / 3, y: (c.y + 2*d.y) / 3 };
     
     // Add new nodes to the graph
     json.nodes.push(newNodeI, newNodeJ, newNodeK, newNodeL);
