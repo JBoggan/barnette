@@ -341,39 +341,20 @@ function segmentsIntersect(p1, q1, p2, q2) {
 }
 
 document.addEventListener('DOMContentLoaded', (event) => {
-    const findRedBlueBtn = document.getElementById('findRedBlueBtn');
-    const findRedGreenBtn = document.getElementById('findRedGreenBtn');
-    const findBlueGreenBtn = document.getElementById('findBlueGreenBtn');
-    
-    if (findRedBlueBtn) {
-        findRedBlueBtn.addEventListener('click', () => {
-            displayTwoColorAlternatingCycles('red', 'blue', 'redBlueCycles'); 
-        });
-    }
-    
-    if (findRedGreenBtn) {
-        findRedGreenBtn.addEventListener('click', () => {
-            displayTwoColorAlternatingCycles('red', 'green', 'redGreenCycles'); 
-        });
-    }
-    
-    if (findBlueGreenBtn) {
-        findBlueGreenBtn.addEventListener('click', () => {
-            displayTwoColorAlternatingCycles('blue', 'green', 'blueGreenCycles'); 
-        });
-    }
+    // Automatically calculate and display all three cycle types when the page loads
+    displayTwoColorAlternatingCycles('red', 'blue', 'redBlueCycles');
+    displayTwoColorAlternatingCycles('red', 'green', 'redGreenCycles');
+    displayTwoColorAlternatingCycles('blue', 'green', 'blueGreenCycles');
 });
 
 function displayTwoColorAlternatingCycles(color1, color2, containerId) {
     const containerDiv = document.getElementById(containerId);
     if (!containerDiv) return;
 
-    // Clear previous results but keep the header and button
+    // Clear previous results but keep the header
     const header = containerDiv.querySelector('h3');
-    const findButton = containerDiv.querySelector('button');
     containerDiv.innerHTML = '';
     if (header) containerDiv.appendChild(header);
-    if (findButton) containerDiv.appendChild(findButton);
 
     const cycles = findAlternatingCycles(json.nodes, edges, color1, color2);
 
