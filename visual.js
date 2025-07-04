@@ -370,6 +370,73 @@ function updateSelectionInfo() {
     updateDebugInfo();
 }
 
+function findFaces(nodes, allEdges) {
+    const adj = new Map();
+    nodes.forEach(n => adj.set(n.id, []));
+    allEdges.forEach(e => {
+        adj.get(e.source.id).push(e.target);
+        adj.get(e.target.id).push(e.source);
+    });
+
+    const sortedNeighbors = new Map();
+    nodes.forEach(node => {
+        const neighbors = adj.get(node.id);
+        if (!neighbors) return;
+        neighbors.sort((a, b) => {
+            const angleA = Math.atan2(a.y - node.y, a.x - node.x);
+            const angleB = Math.atan2(b.y - node.y, b.x - node.x);
+            return angleA - angleB;
+        });
+        sortedNeighbors.set(node.id, neighbors);
+    });
+
+    const visitedDarts = new Set(); // e.g., 'u.id-v.id'
+    const faces = [];
+
+    allEdges.forEach(edge => {
+        const darts = [
+            { u: edge.source, v: edge.target },
+            { u: edge.target, v: edge.source }
+        ];
+
+        darts.forEach(dart => {
+            const dartId = `${dart.u.id}-${dart.v.id}`;
+            if (!visitedDarts.has(dartId)) {
+                const currentFaceEdges = [];
+                const currentFaceNodes = [];
+                let currentU = dart.u;
+                let currentV = dart.v;
+
+                while (!visitedDarts.has(`${currentU.id}-${currentV.id}`)) {
+                    visitedDarts.add(`${currentU.id}-${currentV.id}`);
+                    currentFaceNodes.push(currentU);
+                    
+                    const faceEdge = allEdges.find(e => 
+                        (e.source.id === currentU.id && e.target.id === currentV.id) ||
+                        (e.source.id === currentV.id && e.target.id === currentU.id)
+                    );
+                    if (faceEdge) currentFaceEdges.push(faceEdge);
+
+                    const neighborsOfV = sortedNeighbors.get(currentV.id);
+                    if (!neighborsOfV) break;
+
+                    const prevIndex = neighborsOfV.findIndex(n => n.id === currentU.id);
+                    const nextNode = neighborsOfV[(prevIndex - 1 + neighborsOfV.length) % neighborsOfV.length];
+                    
+                    currentU = currentV;
+                    currentV = nextNode;
+                }
+                
+                if (currentFaceEdges.length > 0) {
+                    faces.push({ edges: currentFaceEdges, nodes: currentFaceNodes });
+                }
+            }
+        });
+    });
+
+    return faces;
+}
+
 function updateDebugInfo() {
     const debugDiv = document.getElementById('debugContent');
     if (!debugDiv) return;
@@ -420,18 +487,47 @@ function getNextNodeName() {
 
 function performTransformation() {
     if (selectedEdges.length !== 2) {
-        alert("Please select exactly 2 edges to transform");
+        alert("Please select exactly 2 edges to transform.");
+        return;
+    }
+
+    const faces = findFaces(json.nodes, edges);
+    const edge1 = selectedEdges[0];
+    const edge2 = selectedEdges[1];
+
+    let targetFace = null;
+    for (const face of faces) {
+        if (face.edges.includes(edge1) && face.edges.includes(edge2)) {
+            targetFace = face;
+            break;
+        }
+    }
+
+    if (!targetFace) {
+        alert("Selected edges do not lie on the same face.");
         return;
     }
     
-    const edge1 = selectedEdges[0];
-    const edge2 = selectedEdges[1];
-    
     // Get the 4 nodes involved in the transformation
-    const a = edge1.source;
-    const b = edge1.target;
-    const c = edge2.source;
-    const d = edge2.target;
+    let a = edge1.source;
+    let b = edge1.target;
+    let c = edge2.source;
+    let d = edge2.target;
+
+    // Check orientation
+    const nodeSeq = targetFace.nodes.map(n => n.id);
+    const idxA = nodeSeq.indexOf(a.id);
+    const idxB = nodeSeq.indexOf(b.id);
+    const idxC = nodeSeq.indexOf(c.id);
+    const idxD = nodeSeq.indexOf(d.id);
+
+    const isForwardAB = (idxA + 1) % nodeSeq.length === idxB;
+    const isForwardCD = (idxC + 1) % nodeSeq.length === idxD;
+
+    if (isForwardAB === isForwardCD) {
+        // If orientations match, swap c and d to make them opposite
+        [c, d] = [d, c];
+    }
     
     // Generate names for the 4 new nodes
     const newNames = getNextNodeName();
