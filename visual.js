@@ -455,33 +455,47 @@ function updateDebugInfo() {
 
 function getNextNodeName() {
     const existingNames = json.nodes.map(n => n.name);
-    const letters = 'abcdefghijklmnopqrstuvwxyz';
     
-    // Find the highest letter used
-    let maxLetter = 'a';
+    // Helper to convert base-26-like names ('a', 'z', 'aa') to numbers (1, 26, 27)
+    function nameToNumber(name) {
+        let num = 0;
+        for (let i = 0; i < name.length; i++) {
+            num = num * 26 + (name.charCodeAt(i) - 'a'.charCodeAt(0) + 1);
+        }
+        return num;
+    }
+
+    // Helper to convert a number back to a base-26-like name
+    function numberToName(num) {
+        let name = '';
+        while (num > 0) {
+            let rem = num % 26;
+            if (rem === 0) {
+                name = 'z' + name;
+                num = Math.floor(num / 26) - 1;
+            } else {
+                name = String.fromCharCode(rem - 1 + 'a'.charCodeAt(0)) + name;
+                num = Math.floor(num / 26);
+            }
+        }
+        return name || 'a';
+    }
+
+    // Find the highest numerical value among existing node names
+    let maxNum = 0;
     existingNames.forEach(name => {
-        if (name.length === 1 && letters.indexOf(name) > letters.indexOf(maxLetter)) {
-            maxLetter = name;
+        const currentNum = nameToNumber(name);
+        if (currentNum > maxNum) {
+            maxNum = currentNum;
         }
     });
-    
-    // Generate next 4 names
+
+    // Generate the next 4 names by incrementing the max number
     const nextNames = [];
-    let currentIndex = letters.indexOf(maxLetter) + 1;
-    
-    for (let i = 0; i < 4; i++) {
-        if (currentIndex < letters.length) {
-            nextNames.push(letters[currentIndex]);
-            currentIndex++;
-        } else {
-            // If we run out of single letters, use double letters
-            const doubleLetterIndex = i - (letters.length - letters.indexOf(maxLetter) - 1);
-            const firstChar = letters[Math.floor(doubleLetterIndex / 26)];
-            const secondChar = letters[doubleLetterIndex % 26];
-            nextNames.push(firstChar + secondChar);
-        }
+    for (let i = 1; i <= 4; i++) {
+        nextNames.push(numberToName(maxNum + i));
     }
-    
+
     return nextNames;
 }
 
