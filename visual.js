@@ -13,57 +13,57 @@ var json = {
       "id": 1,
       "name": "a",
       "group": 0,
-      "x": 200,
+      "x": 100,
       "y": 200
     },
     {
       "id": 2,
       "name": "b",
       "group": 2,
-      "x": 400,
+      "x": 600,
       "y": 200
     },
     {
       "id": 3,
       "name": "c",
       "group": 0,
-      "x": 400,
-      "y": 400
+      "x": 600,
+      "y": 600
     },
     {
       "id": 4,
       "name": "d",
       "group": 0,
-      "x": 200,
-      "y": 400
+      "x": 100,
+      "y": 600
     },
     {
       "id": 5,
       "name": "e",
       "group": 1,
       "x": 250,
-      "y": 250
+      "y": 350
     },
     {
       "id": 6,
       "name": "f",
       "group": 0,
-      "x": 350,
-      "y": 250
+      "x": 450,
+      "y": 350
     },
     {
       "id": 7,
       "name": "g",
       "group": 0,
-      "x": 350,
-      "y": 350
+      "x": 450,
+      "y": 450
     },
     {
       "id": 8,
       "name": "h",
       "group": 1,
       "x": 250,
-      "y": 350
+      "y": 450
     }
   ], "links":[    
       {
@@ -170,7 +170,7 @@ var drag = d3.behavior.drag()
       .style("stroke", function(d) {
         return d.col;
        })
-      .style("stroke-width", 2)
+      .style("stroke-width", 3)
       .on("click", function(d) {
         selectEdge(d3.select(this), d);
       });
@@ -347,7 +347,7 @@ function selectEdge(edgeElement, edgeData) {
     } else {
         // Remove edge from selection
         selectedEdges.splice(index, 1);
-        edgeElement.style("stroke-width", 2)
+        edgeElement.style("stroke-width", 3)
                   .style("filter", "none");
     }
     
@@ -660,7 +660,7 @@ function redrawGraph() {
       .enter().append("line")
         .attr("class", "link")
         .style("stroke", function(d) { return d.col; })
-        .style("stroke-width", 2)
+        .style("stroke-width", 3)
         .on("click", function(d) { selectEdge(d3.select(this), d); });
     
     // Redraw nodes
