@@ -613,17 +613,44 @@ function performTransformation() {
         console.log(`Link ${index}: ${sourceNode.name}-${targetNode.name}, Color: ${link.col}`);
     });
     
-    // Create the 8 new edges
-    const newEdges = [
-        { source: a, target: newNodeI, col: "green" },
-        { source: newNodeI, target: newNodeJ, col: "red" },
-        { source: newNodeJ, target: b, col: "green" },
-        { source: newNodeI, target: newNodeK, col: "blue" },
-        { source: newNodeJ, target: newNodeL, col: "blue" },
-        { source: c, target: newNodeK, col: "green" },
-        { source: newNodeK, target: newNodeL, col: "red" },
-        { source: newNodeL, target: d, col: "green" }
-    ];
+    // Create the 8 new edges based on the colors of the selected edges
+    const color1 = edge1.col;
+    const color2 = edge2.col;
+    const allColors = ['red', 'green', 'blue'];
+    let newEdges;
+
+    if (color1 === color2) {
+        // Case 1: Selected edges have the same color
+        const primaryColor = color1;
+        const otherColors = allColors.filter(c => c !== primaryColor);
+        const secondaryColor = otherColors[0];
+        const tertiaryColor = otherColors[1];
+
+        newEdges = [
+            { source: a, target: newNodeI, col: primaryColor },
+            { source: newNodeI, target: newNodeJ, col: secondaryColor },
+            { source: newNodeJ, target: b, col: primaryColor },
+            { source: newNodeI, target: newNodeK, col: tertiaryColor },
+            { source: newNodeJ, target: newNodeL, col: tertiaryColor },
+            { source: c, target: newNodeK, col: primaryColor },
+            { source: newNodeK, target: newNodeL, col: secondaryColor },
+            { source: newNodeL, target: d, col: primaryColor }
+        ];
+    } else {
+        // Case 2: Selected edges have different colors
+        const tertiaryColor = allColors.filter(c => c !== color1 && c !== color2)[0];
+
+        newEdges = [
+            { source: a, target: newNodeI, col: color1 }, // a-b color
+            { source: newNodeI, target: newNodeJ, col: color2 }, // c-d color
+            { source: newNodeJ, target: b, col: color1 }, // a-b color
+            { source: newNodeI, target: newNodeK, col: tertiaryColor },
+            { source: newNodeJ, target: newNodeL, col: tertiaryColor },
+            { source: c, target: newNodeK, col: color2 }, // c-d color
+            { source: newNodeK, target: newNodeL, col: color1 }, // a-b color
+            { source: newNodeL, target: d, col: color2 } // c-d color
+        ];
+    }
     
     // Add new edges to the graph
     edges.push(...newEdges);
