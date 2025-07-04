@@ -547,8 +547,8 @@ function performTransformation() {
     
     // Remove the selected edges from the edges array
     const edge1Index = edges.indexOf(edge1);
-    const edge2Index = edges.indexOf(edge2);
     if (edge1Index > -1) edges.splice(edge1Index, 1);
+    const edge2Index = edges.indexOf(edge2);
     if (edge2Index > -1) edges.splice(edge2Index, 1);
     
     // Debug: Log what we're trying to remove
