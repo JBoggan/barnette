@@ -743,12 +743,15 @@ function displayTwoColorAlternatingCycles(color1, color2, containerId) {
     const containerDiv = document.getElementById(containerId);
     if (!containerDiv) return;
 
+    const cycles = findAlternatingCycles(json.nodes, edges, color1, color2);
+
     // Clear previous results but keep the header
     const header = containerDiv.querySelector('h3');
-    containerDiv.innerHTML = '';
-    if (header) containerDiv.appendChild(header);
+    const originalTitle = header.textContent.split(' (')[0]; // Grabs the base title
+    header.textContent = `${originalTitle} (${cycles.length})`;
 
-    const cycles = findAlternatingCycles(json.nodes, edges, color1, color2);
+    // Remove only old cycle buttons and messages
+    containerDiv.querySelectorAll('button, p').forEach(el => el.remove());
 
     if (cycles.length === 0) {
         const noCyclesMsg = document.createElement('p');
