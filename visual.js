@@ -317,6 +317,7 @@ function segmentsIntersect(p1, q1, p2, q2) {
 // Global variables for edge selection
 var selectedEdges = [];
 var nextNodeId = 9; // Start after existing nodes
+var previousState = null;
 
 document.addEventListener('DOMContentLoaded', (event) => {
     // Automatically calculate and display all three cycle types when the page loads
@@ -328,6 +329,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const transformBtn = document.getElementById('transformBtn');
     if (transformBtn) {
         transformBtn.addEventListener('click', performTransformation);
+    }
+
+    const undoBtn = document.getElementById('undoBtn');
+    if (undoBtn) {
+        undoBtn.addEventListener('click', undoTransformation);
     }
     
     // Initialize debug info
@@ -504,6 +510,12 @@ function performTransformation() {
         alert("Please select exactly 2 edges to transform.");
         return;
     }
+
+    // Save the current state before transforming for undo functionality
+    previousState = {
+        nodes: JSON.parse(JSON.stringify(json.nodes)),
+        links: JSON.parse(JSON.stringify(json.links))
+    };
 
     const faces = findFaces(json.nodes, edges);
     const edge1 = selectedEdges[0];
@@ -687,6 +699,46 @@ function performTransformation() {
     
     // Recalculate all cycles
     recalculateAllCycles();
+    
+    // Enable the undo button
+    document.getElementById('undoBtn').disabled = false;
+}
+
+function undoTransformation() {
+    if (!previousState) {
+        console.warn("No previous state to undo to.");
+        return;
+    }
+
+    // Restore the graph data from the saved state
+    json.nodes = previousState.nodes;
+    json.links = previousState.links;
+    
+    // The `edges` array also needs to be rebuilt from the restored json.links
+    edges = [];
+    json.links.forEach(function(e) { 
+        var sourceNode = json.nodes.find(function(n) { return n.id === e.source; });
+        var targetNode = json.nodes.find(function(n) { return n.id === e.target; });
+        if (sourceNode && targetNode) {
+            edges.push({source: sourceNode, target: targetNode, col: e.col});
+        }
+    });
+
+    // Clear the stored state so undo can only be used once
+    previousState = null;
+    
+    // Disable the undo button as it has just been used
+    document.getElementById('undoBtn').disabled = true;
+
+    // Clear any active selection and reset visual state
+    selectedEdges = [];
+    link.style("stroke-width", 3).style("filter", "none");
+    updateSelectionInfo();
+
+    // Redraw the graph with the restored data
+    redrawGraph();
+    recalculateAllCycles();
+    updateDebugInfo();
 }
 
 function redrawGraph() {

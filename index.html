@@ -8,7 +8,10 @@
 </head>
 <body>
     <div id="transformControls" style="position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 10px;">
-        <button id="transformBtn" style="padding: 10px; background-color: #6c5ce7; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Transform Graph</button>
+        <div style="display: flex; gap: 5px;">
+            <button id="undoBtn" disabled style="padding: 10px; background-color: #a29bfe; color: white; border: none; border-radius: 4px; cursor: pointer;">Undo</button>
+            <button id="transformBtn" style="flex-grow: 1; padding: 10px; background-color: #6c5ce7; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Transform Graph</button>
+        </div>
         <div id="selectionInfo" style="padding: 8px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px;">
             Select up to 2 edges to transform
         </div>
