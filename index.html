@@ -9,16 +9,15 @@
 <body>
     <div id="transformControls" style="position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 10px;">
         <div style="display: flex; gap: 5px;">
+            <button id="reloadCubeBtn" style="padding: 10px; background-color: #fdcb6e; color: white; border: none; border-radius: 4px; cursor: pointer;">Cube</button>
+            <button id="reloadDodecahedronBtn" style="padding: 10px; background-color: #fdcb6e; color: black; border: none; border-radius: 4px; cursor: pointer;">Dodecahedron</button>
             <button id="undoBtn" disabled style="padding: 10px; background-color: #a29bfe; color: white; border: none; border-radius: 4px; cursor: pointer;">Undo</button>
             <button id="transformBtn" style="flex-grow: 1; padding: 10px; background-color: #6c5ce7; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Transform Graph</button>
         </div>
         <div id="selectionInfo" style="padding: 8px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px;">
             Select up to 2 edges to transform
         </div>
-        <div id="debugInfo" style="padding: 8px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; font-size: 10px; max-height: 200px; overflow-y: auto;">
-            <strong>Debug Info:</strong><br>
-            <span id="debugContent">Click edges to see debug info</span>
-        </div>
+        
     </div>
     
     <div id="cyclesContainer" style="position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 10px;">

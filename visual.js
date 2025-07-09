@@ -7,7 +7,7 @@ var svg = d3.select("body").append("svg")
 
 var swap = [];
 
-var json = {
+const cubeGraphData = {
   "nodes":[
     {
       "id": 1,
@@ -126,7 +126,71 @@ var json = {
       "target": 8,
       "col": "blue"
     }
-  ]}
+  ]};
+
+const dodecahedronGraphData = {
+    "nodes": [
+        {"id": 1, "name": "a", "group": 0, "x": 480, "y": 100},
+        {"id": 2, "name": "b", "group": 0, "x": 686, "y": 250},
+        {"id": 3, "name": "c", "group": 0, "x": 606, "y": 482},
+        {"id": 4, "name": "d", "group": 0, "x": 354, "y": 482},
+        {"id": 5, "name": "e", "group": 0, "x": 274, "y": 250},
+        {"id": 6, "name": "f", "group": 1, "x": 480, "y": 192},
+        {"id": 7, "name": "g", "group": 1, "x": 602, "y": 288},
+        {"id": 8, "name": "h", "group": 1, "x": 555, "y": 428},
+        {"id": 9, "name": "i", "group": 1, "x": 405, "y": 428},
+        {"id": 10, "name": "j", "group": 1, "x": 358, "y": 288},
+        {"id": 11, "name": "k", "group": 2, "x": 480, "y": 610},
+        {"id": 12, "name": "l", "group": 2, "x": 800, "y": 430},
+        {"id": 13, "name": "m", "group": 2, "x": 720, "y": 140},
+        {"id": 14, "name": "n", "group": 2, "x": 240, "y": 140},
+        {"id": 15, "name": "o", "group": 2, "x": 160, "y": 430},
+        {"id": 16, "name": "p", "group": 3, "x": 480, "y": 518},
+        {"id": 17, "name": "q", "group": 3, "x": 692, "y": 392},
+        {"id": 18, "name": "r", "group": 3, "x": 645, "y": 208},
+        {"id": 19, "name": "s", "group": 3, "x": 315, "y": 208},
+        {"id": 20, "name": "t", "group": 3, "x": 268, "y": 392}
+    ],
+    "links": [
+        {"source": 1, "target": 2, "col": "red"},
+        {"source": 2, "target": 3, "col": "red"},
+        {"source": 3, "target": 4, "col": "red"},
+        {"source": 4, "target": 5, "col": "red"},
+        {"source": 5, "target": 1, "col": "red"},
+
+        {"source": 6, "target": 7, "col": "red"},
+        {"source": 7, "target": 8, "col": "red"},
+        {"source": 8, "target": 9, "col": "red"},
+        {"source": 9, "target": 10, "col": "red"},
+        {"source": 10, "target": 6, "col": "red"},
+
+        {"source": 11, "target": 12, "col": "red"},
+        {"source": 12, "target": 13, "col": "red"},
+        {"source": 13, "target": 14, "col": "red"},
+        {"source": 14, "target": 15, "col": "red"},
+        {"source": 15, "target": 11, "col": "red"},
+
+        {"source": 16, "target": 17, "col": "red"},
+        {"source": 17, "target": 18, "col": "red"},
+        {"source": 18, "target": 19, "col": "red"},
+        {"source": 19, "target": 20, "col": "red"},
+        {"source": 20, "target": 16, "col": "red"},
+
+        {"source": 1, "target": 14, "col": "green"},
+        {"source": 2, "target": 13, "col": "green"},
+        {"source": 3, "target": 12, "col": "green"},
+        {"source": 4, "target": 11, "col": "green"},
+        {"source": 5, "target": 15, "col": "green"},
+
+        {"source": 6, "target": 19, "col": "blue"},
+        {"source": 7, "target": 18, "col": "blue"},
+        {"source": 8, "target": 17, "col": "blue"},
+        {"source": 9, "target": 16, "col": "blue"},
+        {"source": 10, "target": 20, "col": "blue"}
+    ]
+};
+
+var json = JSON.parse(JSON.stringify(cubeGraphData));
 
 var edges = [];
 var   fill = d3.scale.category20();
@@ -335,7 +399,17 @@ document.addEventListener('DOMContentLoaded', (event) => {
     if (undoBtn) {
         undoBtn.addEventListener('click', undoTransformation);
     }
+
+    const reloadCubeBtn = document.getElementById('reloadCubeBtn');
+    if (reloadCubeBtn) {
+        reloadCubeBtn.addEventListener('click', () => loadGraph(cubeGraphData));
+    }
     
+    const reloadDodecahedronBtn = document.getElementById('reloadDodecahedronBtn');
+    if (reloadDodecahedronBtn) {
+        reloadDodecahedronBtn.addEventListener('click', () => loadGraph(dodecahedronGraphData));
+    }
+
     // Initialize debug info
     updateDebugInfo();
 });
@@ -578,15 +652,15 @@ function performTransformation() {
     if (edge2Index > -1) edges.splice(edge2Index, 1);
     
     // Debug: Log what we're trying to remove
-    console.log("Selected edges to remove:");
-    console.log("Edge1:", edge1.source.name + "-" + edge1.target.name, "Color:", edge1.col);
-    console.log("Edge2:", edge2.source.name + "-" + edge2.target.name, "Color:", edge2.col);
+    //console.log("Selected edges to remove:");
+    //console.log("Edge1:", edge1.source.name + "-" + edge1.target.name, "Color:", edge1.col);
+    //console.log("Edge2:", edge2.source.name + "-" + edge2.target.name, "Color:", edge2.col);
     
     console.log("Current json.links before removal:");
     json.links.forEach((link, index) => {
         const sourceNode = json.nodes.find(n => n.id === link.source);
         const targetNode = json.nodes.find(n => n.id === link.target);
-        console.log(`Link ${index}: ${sourceNode.name}-${targetNode.name}, Color: ${link.col}`);
+        //console.log(`Link ${index}: ${sourceNode.name}-${targetNode.name}, Color: ${link.col}`);
     });
     
     // Remove the exact selected edges from json.links
@@ -598,7 +672,7 @@ function performTransformation() {
         const matches = (sourceNode === edge1.source && targetNode === edge1.target) ||
                        (sourceNode === edge1.target && targetNode === edge1.source);
         if (matches) {
-            console.log("Found edge1 match at index", json.links.indexOf(l), ":", sourceNode.name + "-" + targetNode.name, "Color:", l.col);
+            //console.log("Found edge1 match at index", json.links.indexOf(l), ":", sourceNode.name + "-" + targetNode.name, "Color:", l.col);
         }
         return matches;
     });
@@ -610,33 +684,33 @@ function performTransformation() {
         const matches = (sourceNode === edge2.source && targetNode === edge2.target) ||
                        (sourceNode === edge2.target && targetNode === edge2.source);
         if (matches) {
-            console.log("Found edge2 match at index", json.links.indexOf(l), ":", sourceNode.name + "-" + targetNode.name, "Color:", l.col);
+            //console.log("Found edge2 match at index", json.links.indexOf(l), ":", sourceNode.name + "-" + targetNode.name, "Color:", l.col);
         }
         return matches;
     });
     
-    console.log("Removing links at indices:", link1Index, link2Index);
+    //console.log("Removing links at indices:", link1Index, link2Index);
     
     if (link1Index > -1) {
         const removedLink = json.links[link1Index];
         const sourceNode = json.nodes.find(n => n.id === removedLink.source);
         const targetNode = json.nodes.find(n => n.id === removedLink.target);
-        console.log("Removed link1:", sourceNode.name + "-" + targetNode.name, "Color:", removedLink.col);
+        //console.log("Removed link1:", sourceNode.name + "-" + targetNode.name, "Color:", removedLink.col);
         json.links.splice(link1Index, 1);
     }
     if (link2Index > -1) {
         const removedLink = json.links[link2Index];
         const sourceNode = json.nodes.find(n => n.id === removedLink.source);
         const targetNode = json.nodes.find(n => n.id === removedLink.target);
-        console.log("Removed link2:", sourceNode.name + "-" + targetNode.name, "Color:", removedLink.col);
+        //console.log("Removed link2:", sourceNode.name + "-" + targetNode.name, "Color:", removedLink.col);
         json.links.splice(link2Index, 1);
     }
     
-    console.log("json.links after removal:");
+    //console.log("json.links after removal:");
     json.links.forEach((link, index) => {
         const sourceNode = json.nodes.find(n => n.id === link.source);
         const targetNode = json.nodes.find(n => n.id === link.target);
-        console.log(`Link ${index}: ${sourceNode.name}-${targetNode.name}, Color: ${link.col}`);
+        //console.log(`Link ${index}: ${sourceNode.name}-${targetNode.name}, Color: ${link.col}`);
     });
     
     // Create the 8 new edges based on the colors of the selected edges
@@ -704,15 +778,9 @@ function performTransformation() {
     document.getElementById('undoBtn').disabled = false;
 }
 
-function undoTransformation() {
-    if (!previousState) {
-        console.warn("No previous state to undo to.");
-        return;
-    }
-
-    // Restore the graph data from the saved state
-    json.nodes = previousState.nodes;
-    json.links = previousState.links;
+function loadGraph(graphData) {
+    // Restore the graph data from the provided data object
+    json = JSON.parse(JSON.stringify(graphData));
     
     // The `edges` array also needs to be rebuilt from the restored json.links
     edges = [];
@@ -724,21 +792,34 @@ function undoTransformation() {
         }
     });
 
-    // Clear the stored state so undo can only be used once
+    // Reset nextNodeId to be one greater than the max node ID in the loaded graph
+    nextNodeId = (json.nodes.length > 0) ? Math.max(...json.nodes.map(n => n.id)) + 1 : 1;
+
+    // Clear the stored state for undo
     previousState = null;
-    
-    // Disable the undo button as it has just been used
     document.getElementById('undoBtn').disabled = true;
 
     // Clear any active selection and reset visual state
     selectedEdges = [];
-    link.style("stroke-width", 3).style("filter", "none");
+    if (typeof link !== 'undefined' && link) {
+        link.style("stroke-width", 3).style("filter", "none");
+    }
     updateSelectionInfo();
 
-    // Redraw the graph with the restored data
+    // Redraw the graph with the new data
     redrawGraph();
     recalculateAllCycles();
     updateDebugInfo();
+}
+
+function undoTransformation() {
+    if (!previousState) {
+        console.warn("No previous state to undo to.");
+        return;
+    }
+
+    // Restore the graph using the new loadGraph function
+    loadGraph(previousState);
 }
 
 function redrawGraph() {
