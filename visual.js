@@ -382,12 +382,11 @@ function segmentsIntersect(p1, q1, p2, q2) {
 var selectedEdges = [];
 var nextNodeId = 9; // Start after existing nodes
 var previousState = null;
+var uniqueSpans = [];
 
 document.addEventListener('DOMContentLoaded', (event) => {
     // Automatically calculate and display all three cycle types when the page loads
-    displayTwoColorAlternatingCycles('red', 'blue', 'redBlueCycles');
-    displayTwoColorAlternatingCycles('red', 'green', 'redGreenCycles');
-    displayTwoColorAlternatingCycles('blue', 'green', 'blueGreenCycles');
+    recalculateAllCycles();
     
     // Add transform button event listener
     const transformBtn = document.getElementById('transformBtn');
@@ -629,6 +628,14 @@ function performTransformation() {
         [c, d] = [d, c];
     }
     
+    // Remove the selected edges from the graph data arrays
+    edges = edges.filter(e => e !== edge1 && e !== edge2);
+    json.links = json.links.filter(l => {
+        const isEdge1 = (l.source === edge1.source.id && l.target === edge1.target.id) || (l.source === edge1.target.id && l.target === edge1.source.id);
+        const isEdge2 = (l.source === edge2.source.id && l.target === edge2.target.id) || (l.source === edge2.target.id && l.target === edge2.source.id);
+        return !(isEdge1 || isEdge2);
+    });
+    
     // Generate names for the 4 new nodes
     const newNames = getNextNodeName();
     const i = newNames[0];
@@ -644,74 +651,6 @@ function performTransformation() {
     
     // Add new nodes to the graph
     json.nodes.push(newNodeI, newNodeJ, newNodeK, newNodeL);
-    
-    // Remove the selected edges from the edges array
-    const edge1Index = edges.indexOf(edge1);
-    if (edge1Index > -1) edges.splice(edge1Index, 1);
-    const edge2Index = edges.indexOf(edge2);
-    if (edge2Index > -1) edges.splice(edge2Index, 1);
-    
-    // Debug: Log what we're trying to remove
-    //console.log("Selected edges to remove:");
-    //console.log("Edge1:", edge1.source.name + "-" + edge1.target.name, "Color:", edge1.col);
-    //console.log("Edge2:", edge2.source.name + "-" + edge2.target.name, "Color:", edge2.col);
-    
-    console.log("Current json.links before removal:");
-    json.links.forEach((link, index) => {
-        const sourceNode = json.nodes.find(n => n.id === link.source);
-        const targetNode = json.nodes.find(n => n.id === link.target);
-        //console.log(`Link ${index}: ${sourceNode.name}-${targetNode.name}, Color: ${link.col}`);
-    });
-    
-    // Remove the exact selected edges from json.links
-    // We need to find the exact links that correspond to our selected edges
-    const link1Index = json.links.findIndex(l => {
-        // Check if this link corresponds to edge1
-        const sourceNode = json.nodes.find(n => n.id === l.source);
-        const targetNode = json.nodes.find(n => n.id === l.target);
-        const matches = (sourceNode === edge1.source && targetNode === edge1.target) ||
-                       (sourceNode === edge1.target && targetNode === edge1.source);
-        if (matches) {
-            //console.log("Found edge1 match at index", json.links.indexOf(l), ":", sourceNode.name + "-" + targetNode.name, "Color:", l.col);
-        }
-        return matches;
-    });
-    
-    const link2Index = json.links.findIndex(l => {
-        // Check if this link corresponds to edge2
-        const sourceNode = json.nodes.find(n => n.id === l.source);
-        const targetNode = json.nodes.find(n => n.id === l.target);
-        const matches = (sourceNode === edge2.source && targetNode === edge2.target) ||
-                       (sourceNode === edge2.target && targetNode === edge2.source);
-        if (matches) {
-            //console.log("Found edge2 match at index", json.links.indexOf(l), ":", sourceNode.name + "-" + targetNode.name, "Color:", l.col);
-        }
-        return matches;
-    });
-    
-    //console.log("Removing links at indices:", link1Index, link2Index);
-    
-    if (link1Index > -1) {
-        const removedLink = json.links[link1Index];
-        const sourceNode = json.nodes.find(n => n.id === removedLink.source);
-        const targetNode = json.nodes.find(n => n.id === removedLink.target);
-        //console.log("Removed link1:", sourceNode.name + "-" + targetNode.name, "Color:", removedLink.col);
-        json.links.splice(link1Index, 1);
-    }
-    if (link2Index > -1) {
-        const removedLink = json.links[link2Index];
-        const sourceNode = json.nodes.find(n => n.id === removedLink.source);
-        const targetNode = json.nodes.find(n => n.id === removedLink.target);
-        //console.log("Removed link2:", sourceNode.name + "-" + targetNode.name, "Color:", removedLink.col);
-        json.links.splice(link2Index, 1);
-    }
-    
-    //console.log("json.links after removal:");
-    json.links.forEach((link, index) => {
-        const sourceNode = json.nodes.find(n => n.id === link.source);
-        const targetNode = json.nodes.find(n => n.id === link.target);
-        //console.log(`Link ${index}: ${sourceNode.name}-${targetNode.name}, Color: ${link.col}`);
-    });
     
     // Create the 8 new edges based on the colors of the selected edges
     const color1 = edge1.col;
@@ -771,7 +710,8 @@ function performTransformation() {
     // Redraw the entire graph
     redrawGraph();
     
-    // Recalculate all cycles
+    // Recalculate all cycles and clear spans
+    uniqueSpans = [];
     recalculateAllCycles();
     
     // Enable the undo button
@@ -808,6 +748,7 @@ function loadGraph(graphData) {
 
     // Redraw the graph with the new data
     redrawGraph();
+    uniqueSpans = [];
     recalculateAllCycles();
     updateDebugInfo();
 }
@@ -1021,5 +962,83 @@ function recalculateAllCycles() {
     displayTwoColorAlternatingCycles('red', 'blue', 'redBlueCycles');
     displayTwoColorAlternatingCycles('red', 'green', 'redGreenCycles');
     displayTwoColorAlternatingCycles('blue', 'green', 'blueGreenCycles');
+    updateSpans('red', 'blue');
+    updateSpans('red', 'green');
+    updateSpans('blue', 'green');
+}
+
+function getCurrentSpan() {
+    const redBlueCycles = findAlternatingCycles(json.nodes, edges, 'red', 'blue');
+    const redGreenCycles = findAlternatingCycles(json.nodes, edges, 'red', 'green');
+    const blueGreenCycles = findAlternatingCycles(json.nodes, edges, 'blue', 'green');
+    return [...redBlueCycles, ...redGreenCycles, ...blueGreenCycles];
+}
+
+function getCanonicalSpanId(span) {
+    if (!span || span.length === 0) {
+        return 'empty';
+    }
+    
+    const canonicalCycles = span.map(cycle => {
+        const cycleNodeNames = cycle.map(node => node.name);
+        // Create canonical representation of a cycle by sorting its rotations
+        let smallestRotation = cycleNodeNames.join(',');
+        for (let i = 1; i < cycleNodeNames.length; i++) {
+            const rotation = [...cycleNodeNames.slice(i), ...cycleNodeNames.slice(0, i)].join(',');
+            if (rotation < smallestRotation) {
+                smallestRotation = rotation;
+            }
+        }
+        return smallestRotation;
+    });
+
+    // Sort the canonical representations of the cycles to create a canonical span ID
+    canonicalCycles.sort();
+    return canonicalCycles.join(';');
+}
+
+function updateSpans(color1, color2) {
+    const currentSpan = findAlternatingCycles(json.nodes, edges, color1, color2);
+    if (currentSpan.length === 0) return;
+
+    const spanId = getCanonicalSpanId(currentSpan);
+    const isUnique = !uniqueSpans.some(s => s.id === spanId);
+
+    if (isUnique) {
+        uniqueSpans.push({ id: spanId, span: currentSpan });
+        renderSpans();
+    }
+}
+
+function renderSpans() {
+    const spansContainer = document.getElementById('spansContainer');
+    if (!spansContainer) return;
+
+    const header = spansContainer.querySelector('h3');
+    const originalTitle = header.textContent.split(' (')[0];
+    header.textContent = `${originalTitle} (${uniqueSpans.length})`;
+
+    // Clear only the span items, not the header
+    spansContainer.querySelectorAll('.span-item').forEach(el => el.remove());
+
+    uniqueSpans.forEach((spanData, index) => {
+        const spanDiv = document.createElement('div');
+        spanDiv.className = 'span-item';
+        spanDiv.style.cssText = 'margin-bottom: 10px; padding: 5px; border: 1px solid #aaa; border-radius: 4px; background-color: white;';
+        
+        const spanTitle = document.createElement('strong');
+        spanTitle.textContent = `Span ${index + 1} (${spanData.span.length} cycles)`;
+        spanDiv.appendChild(spanTitle);
+
+        spanData.span.forEach(cycle => {
+            const cycleP = document.createElement('p');
+            const cycleText = cycle.map(n => n.name).join(' → ') + ' → ' + cycle[0].name;
+            cycleP.textContent = cycleText;
+            cycleP.style.cssText = 'margin: 2px 0; font-size: 10px;';
+            spanDiv.appendChild(cycleP);
+        });
+
+        spansContainer.appendChild(spanDiv);
+    });
 }
 
