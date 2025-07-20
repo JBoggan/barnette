@@ -981,15 +981,27 @@ function getCanonicalSpanId(span) {
     
     const canonicalCycles = span.map(cycle => {
         const cycleNodeNames = cycle.map(node => node.name);
-        // Create canonical representation of a cycle by sorting its rotations
-        let smallestRotation = cycleNodeNames.join(',');
+        const reversedCycleNodeNames = cycleNodeNames.slice().reverse();
+
+        let canonicalRepresentation = cycleNodeNames.join(',');
+
+        // Check forward rotations
         for (let i = 1; i < cycleNodeNames.length; i++) {
             const rotation = [...cycleNodeNames.slice(i), ...cycleNodeNames.slice(0, i)].join(',');
-            if (rotation < smallestRotation) {
-                smallestRotation = rotation;
+            if (rotation < canonicalRepresentation) {
+                canonicalRepresentation = rotation;
             }
         }
-        return smallestRotation;
+
+        // Check reverse rotations
+        for (let i = 0; i < reversedCycleNodeNames.length; i++) {
+            const rotation = [...reversedCycleNodeNames.slice(i), ...reversedCycleNodeNames.slice(0, i)].join(',');
+            if (rotation < canonicalRepresentation) {
+                canonicalRepresentation = rotation;
+            }
+        }
+
+        return canonicalRepresentation;
     });
 
     // Sort the canonical representations of the cycles to create a canonical span ID
