@@ -713,6 +713,7 @@ function performTransformation() {
     // Recalculate all cycles and clear spans
     uniqueSpans = [];
     recalculateAllCycles();
+    renderSpanCounts(); // Clear counts
     
     // Enable the undo button
     document.getElementById('undoBtn').disabled = false;
@@ -750,6 +751,7 @@ function loadGraph(graphData) {
     redrawGraph();
     uniqueSpans = [];
     recalculateAllCycles();
+    renderSpanCounts(); // Clear counts
     updateDebugInfo();
 }
 
@@ -1019,6 +1021,7 @@ function updateSpans(color1, color2) {
     if (isUnique) {
         uniqueSpans.push({ id: spanId, span: currentSpan });
         renderSpans();
+        renderSpanCounts();
     }
 }
 
@@ -1051,6 +1054,38 @@ function renderSpans() {
         });
 
         spansContainer.appendChild(spanDiv);
+    });
+}
+
+function renderSpanCounts() {
+    const countsContainer = document.getElementById('spanCountsContainer');
+    if (!countsContainer) return;
+
+    // Tally the counts
+    const counts = uniqueSpans.reduce((acc, { span }) => {
+        const numCycles = span.length;
+        acc[numCycles] = (acc[numCycles] || 0) + 1;
+        return acc;
+    }, {});
+
+    // Clear previous counts, but keep the header
+    const header = countsContainer.querySelector('h3');
+    countsContainer.innerHTML = ''; 
+    countsContainer.appendChild(header);
+
+    // Get sorted keys
+    const sortedCounts = Object.keys(counts).sort((a, b) => a - b);
+
+    // Display new counts
+    sortedCounts.forEach(numCycles => {
+        const count = counts[numCycles];
+        const p = document.createElement('p');
+        p.style.margin = '4px 0';
+        p.style.fontSize = '12px';
+        const plural = count > 1 ? 's' : '';
+        const cyclePlural = numCycles > 1 ? 's' : '';
+        p.textContent = `${count} span${plural} w/ ${numCycles} cycle${cyclePlural}`;
+        countsContainer.appendChild(p);
     });
 }
 
