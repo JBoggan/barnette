@@ -257,6 +257,7 @@ var drag = d3.behavior.drag()
       .style("fill", function(d) {
         return fill(d.group);
        }).on("dblclick", dblclick)
+      .on("click", function(d) { selectVertex(d3.select(this), d); })
       .call(drag);
 
 /*
@@ -387,6 +388,7 @@ function segmentsIntersect(p1, q1, p2, q2) {
 
 // Global variables for edge selection
 var selectedEdges = [];
+var selectedVertex = null;
 var nextNodeId = 9; // Start after existing nodes
 var previousState = null;
 var uniqueSpans = [];
@@ -394,9 +396,14 @@ var uniqueSpans = [];
 document.addEventListener('DOMContentLoaded', (event) => {
     recalculateAllCycles();
     
-    const transformBtn = document.getElementById('transformBtn');
-    if (transformBtn) {
-        transformBtn.addEventListener('click', performTransformation);
+    const edgeTransformBtn = document.getElementById('edgeTransformBtn');
+    if (edgeTransformBtn) {
+        edgeTransformBtn.addEventListener('click', performEdgeTransformation);
+    }
+
+    const vertexTransformBtn = document.getElementById('vertexTransformBtn');
+    if (vertexTransformBtn) {
+        vertexTransformBtn.addEventListener('click', performVertexTransformation);
     }
 
     const undoBtn = document.getElementById('undoBtn');
@@ -424,6 +431,16 @@ document.addEventListener('DOMContentLoaded', (event) => {
         stopDfsBtn.addEventListener('click', stopDFS);
     }
 
+    const renderGraphBtn = document.getElementById('renderGraphBtn');
+    if (renderGraphBtn) {
+        renderGraphBtn.addEventListener('click', renderTransformationGraph);
+    }
+
+    const clearGraphRenderBtn = document.getElementById('clearGraphRenderBtn');
+    if (clearGraphRenderBtn) {
+        clearGraphRenderBtn.addEventListener('click', clearTransformationGraphRender);
+    }
+
     initializeTransformationGraph();
     updateDebugInfo();
 });
@@ -448,17 +465,52 @@ function selectEdge(edgeElement, edgeData) {
     updateSelectionInfo();
 }
 
+function selectVertex(vertexElement, vertexData) {
+    // Clear any selected edges first
+    selectedEdges = [];
+    link.style("stroke-width", 3).style("filter", "none");
+    
+    if (selectedVertex === vertexData) {
+        // Deselect if clicking the same vertex
+        selectedVertex = null;
+        vertexElement.select("circle")
+            .attr("r", 5)
+            .style("stroke", "none")
+            .style("stroke-width", 0);
+    } else {
+        // Clear previous vertex selection
+        if (selectedVertex) {
+            node.filter(function(d) { return d === selectedVertex; })
+                .select("circle")
+                .attr("r", 5)
+                .style("stroke", "none")
+                .style("stroke-width", 0);
+        }
+        
+        // Select new vertex
+        selectedVertex = vertexData;
+        vertexElement.select("circle")
+            .attr("r", 8)
+            .style("stroke", "orange")
+            .style("stroke-width", 3);
+    }
+    
+    updateSelectionInfo();
+}
+
 function updateSelectionInfo() {
     const infoDiv = document.getElementById('selectionInfo');
-    if (selectedEdges.length === 0) {
-        infoDiv.textContent = "Select up to 2 edges to transform";
+    if (selectedVertex) {
+        infoDiv.textContent = `Selected vertex: ${selectedVertex.name}`;
+    } else if (selectedEdges.length === 0) {
+        infoDiv.textContent = "Select 2 edges for edge transform or 1 vertex for vertex transform";
     } else if (selectedEdges.length === 1) {
         const edge = selectedEdges[0];
-        infoDiv.textContent = `Selected: ${edge.source.name}-${edge.target.name}`;
+        infoDiv.textContent = `Selected edge: ${edge.source.name}-${edge.target.name}`;
     } else {
         const edge1 = selectedEdges[0];
         const edge2 = selectedEdges[1];
-        infoDiv.textContent = `Selected: ${edge1.source.name}-${edge1.target.name}, ${edge2.source.name}-${edge2.target.name}`;
+        infoDiv.textContent = `Selected edges: ${edge1.source.name}-${edge1.target.name}, ${edge2.source.name}-${edge2.target.name}`;
     }
     
     updateDebugInfo();
@@ -547,7 +599,7 @@ function updateDebugInfo() {
     debugDiv.textContent = debugText;
 }
 
-function getNextNodeName() {
+function getNextNodeName(count = 4) {
     const existingNames = json.nodes.map(n => n.name);
     
     // Helper to convert base-26-like names ('a', 'z', 'aa') to numbers (1, 26, 27)
@@ -584,16 +636,16 @@ function getNextNodeName() {
         }
     });
 
-    // Generate the next 4 names by incrementing the max number
+    // Generate the next 'count' names by incrementing the max number
     const nextNames = [];
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= count; i++) {
         nextNames.push(numberToName(maxNum + i));
     }
 
     return nextNames;
 }
 
-function performTransformation() {
+function performEdgeTransformation() {
     if (selectedEdges.length !== 2) {
         alert("Please select exactly 2 edges to transform.");
         return;
@@ -734,6 +786,129 @@ function performTransformation() {
     document.getElementById('undoBtn').disabled = false;
 }
 
+function performVertexTransformation() {
+    if (!selectedVertex) {
+        alert("Please select exactly 1 vertex to transform.");
+        return;
+    }
+
+    // Save the current state before transforming for undo functionality
+    previousState = {
+        nodes: JSON.parse(JSON.stringify(json.nodes)),
+        links: JSON.parse(JSON.stringify(json.links))
+    };
+
+    const a = selectedVertex;
+    
+    // Find all edges connected to vertex a
+    const connectedEdges = edges.filter(e => 
+        e.source.id === a.id || e.target.id === a.id
+    );
+    
+    if (connectedEdges.length !== 3) {
+        alert("Selected vertex must have exactly 3 edges (degree 3).");
+        return;
+    }
+    
+    // Get the three neighbors and their edge colors
+    const neighbors = connectedEdges.map(e => {
+        if (e.source.id === a.id) {
+            return { node: e.target, color: e.col, edge: e };
+        } else {
+            return { node: e.source, color: e.col, edge: e };
+        }
+    });
+    
+    // Sort neighbors by color to ensure consistent ordering (red, green, blue)
+    const colorOrder = { 'red': 0, 'green': 1, 'blue': 2 };
+    neighbors.sort((n1, n2) => colorOrder[n1.color] - colorOrder[n2.color]);
+    
+    const b = neighbors[0].node;  // red neighbor
+    const c = neighbors[1].node;  // green neighbor
+    const d = neighbors[2].node;  // blue neighbor
+    const colorAB = neighbors[0].color;
+    const colorAC = neighbors[1].color;
+    const colorAD = neighbors[2].color;
+    
+    // Generate names for the 2 new nodes (a stays, e and f are new)
+    const newNames = getNextNodeName(2);
+    const eName = newNames[0];
+    const fName = newNames[1];
+    
+    // Position the new nodes in a small triangle around the original vertex
+    const radius = 20;
+    const angle1 = 0;
+    const angle2 = 2 * Math.PI / 3;
+    const angle3 = 4 * Math.PI / 3;
+    
+    // Keep 'a' at original position
+    const newNodeE = { 
+        id: nextNodeId++, 
+        name: eName, 
+        group: a.group, 
+        x: a.x + radius * Math.cos(angle2), 
+        y: a.y + radius * Math.sin(angle2) 
+    };
+    const newNodeF = { 
+        id: nextNodeId++, 
+        name: fName, 
+        group: a.group, 
+        x: a.x + radius * Math.cos(angle3), 
+        y: a.y + radius * Math.sin(angle3) 
+    };
+    
+    // Remove the old edges from vertex a
+    edges = edges.filter(e => !connectedEdges.includes(e));
+    json.links = json.links.filter(l => {
+        return !connectedEdges.some(ce => 
+            (l.source === ce.source.id && l.target === ce.target.id) ||
+            (l.source === ce.target.id && l.target === ce.source.id)
+        );
+    });
+    
+    // Add new nodes to the graph
+    json.nodes.push(newNodeE, newNodeF);
+    
+    // Create the new edges according to the specification
+    // Triangle edges: a-e (blue), a-f (red), e-f (green)
+    // External edges: a-b (green), e-c (red), f-d (blue)
+    const newEdges = [
+        { source: a, target: newNodeE, col: colorAD },     // a-e is blue (opposite of a-d)
+        { source: a, target: newNodeF, col: colorAC },     // a-f is red (opposite of a-c)
+        { source: newNodeE, target: newNodeF, col: colorAB }, // e-f is green (opposite of a-b)
+        { source: a, target: b, col: colorAB },            // a-b keeps its color (green)
+        { source: newNodeE, target: c, col: colorAC },     // e-c gets a-c's color (red)
+        { source: newNodeF, target: d, col: colorAD }      // f-d gets a-d's color (blue)
+    ];
+    
+    // Add new edges to the graph
+    edges.push(...newEdges);
+    
+    // Add new edges to json.links
+    newEdges.forEach(edge => {
+        json.links.push({
+            source: edge.source.id,
+            target: edge.target.id,
+            col: edge.col
+        });
+    });
+    
+    // Clear selection
+    selectedVertex = null;
+    updateSelectionInfo();
+    
+    // Redraw the entire graph
+    redrawGraph();
+    
+    // Recalculate all cycles and clear spans
+    uniqueSpans = [];
+    recalculateAllCycles();
+    renderSpanCounts();
+    
+    // Enable the undo button
+    document.getElementById('undoBtn').disabled = false;
+}
+
 function loadGraph(graphData) {
     json = JSON.parse(JSON.stringify(graphData));
     
@@ -752,8 +927,12 @@ function loadGraph(graphData) {
     document.getElementById('undoBtn').disabled = true;
 
     selectedEdges = [];
+    selectedVertex = null;
     if (typeof link !== 'undefined' && link) {
         link.style("stroke-width", 3).style("filter", "none");
+    }
+    if (typeof node !== 'undefined' && node) {
+        node.select("circle").attr("r", 5).style("stroke", "none").style("stroke-width", 0);
     }
     updateSelectionInfo();
 
@@ -816,6 +995,7 @@ function redrawGraph() {
         .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
         .style("fill", function(d) { return fill(d.group); })
         .on("dblclick", dblclick)
+        .on("click", function(d) { selectVertex(d3.select(this), d); })
         .call(drag);
     
     node.append("circle").attr("r", 5);
@@ -1463,5 +1643,110 @@ function redrawTransformationGraph() {
     // Disabled rendering for performance - just keep the data structure
     // The statistics are still updated via updateTransformationGraphInfo()
     return;
+}
+
+function renderTransformationGraph() {
+    const renderDiv = document.getElementById('transformationGraphRender');
+    if (!renderDiv) return;
+    
+    if (transformationGraph.nodes.length === 0) {
+        renderDiv.innerHTML = '<p style="color: #636e72; font-style: italic; padding: 10px;">No transformation graph data to render.</p>';
+        return;
+    }
+    
+    // Clear the container
+    renderDiv.innerHTML = '';
+    
+    // Create SVG for the transformation graph
+    const containerWidth = renderDiv.clientWidth;
+    const containerHeight = renderDiv.clientHeight;
+    
+    const tgSvg = d3.select('#transformationGraphRender')
+        .append('svg')
+        .attr('width', containerWidth)
+        .attr('height', containerHeight);
+    
+    // Create a copy of the graph data for D3 force layout
+    const graphData = {
+        nodes: transformationGraph.nodes.map(n => ({
+            id: n.id,
+            hash: n.hash,
+            depth: n.depth,
+            state: n.state
+        })),
+        links: transformationGraph.links.map(l => ({
+            source: l.source.id,
+            target: l.target.id,
+            transformation: l.transformation
+        }))
+    };
+    
+    // Create force layout
+    const force = d3.layout.force()
+        .nodes(graphData.nodes)
+        .links(graphData.links)
+        .size([containerWidth, containerHeight])
+        .linkDistance(80)
+        .charge(-300)
+        .gravity(0.05)
+        .start();
+    
+    // Draw links
+    const tgLinks = tgSvg.selectAll('.tg-link')
+        .data(graphData.links)
+        .enter().append('line')
+        .attr('class', 'tg-link')
+        .style('stroke', '#95a5a6')
+        .style('stroke-width', 1)
+        .style('stroke-opacity', 0.6);
+    
+    // Draw nodes
+    const tgNodes = tgSvg.selectAll('.tg-node')
+        .data(graphData.nodes)
+        .enter().append('g')
+        .attr('class', 'tg-node')
+        .call(force.drag);
+    
+    tgNodes.append('circle')
+        .attr('r', 6)
+        .style('fill', function(d) {
+            // Color by depth
+            const depthColors = ['#e74c3c', '#e67e22', '#f39c12', '#2ecc71', '#3498db', '#9b59b6'];
+            return depthColors[d.depth % depthColors.length];
+        })
+        .style('stroke', '#2c3e50')
+        .style('stroke-width', 1.5);
+    
+    tgNodes.append('text')
+        .attr('dx', 10)
+        .attr('dy', 4)
+        .style('font-size', '10px')
+        .style('fill', '#2c3e50')
+        .text(function(d) { return 'S' + d.id; });
+    
+    // Add tooltips on hover
+    tgNodes.append('title')
+        .text(function(d) {
+            return `State ${d.id}\nDepth: ${d.depth}\nHash: ${d.hash.substring(0, 40)}...`;
+        });
+    
+    // Update positions on each tick
+    force.on('tick', function() {
+        tgLinks
+            .attr('x1', function(d) { return d.source.x; })
+            .attr('y1', function(d) { return d.source.y; })
+            .attr('x2', function(d) { return d.target.x; })
+            .attr('y2', function(d) { return d.target.y; });
+        
+        tgNodes.attr('transform', function(d) {
+            return 'translate(' + d.x + ',' + d.y + ')';
+        });
+    });
+}
+
+function clearTransformationGraphRender() {
+    const renderDiv = document.getElementById('transformationGraphRender');
+    if (!renderDiv) return;
+    renderDiv.innerHTML = '';
 }
 

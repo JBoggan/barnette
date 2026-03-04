@@ -12,14 +12,17 @@
             <button id="reloadCubeBtn" style="padding: 10px; background-color: #fdcb6e; color: white; border: none; border-radius: 4px; cursor: pointer;">Cube</button>
             <button id="reloadDodecahedronBtn" style="padding: 10px; background-color: #fdcb6e; color: black; border: none; border-radius: 4px; cursor: pointer;">Dodecahedron</button>
             <button id="undoBtn" disabled style="padding: 10px; background-color: #a29bfe; color: white; border: none; border-radius: 4px; cursor: pointer;">Undo</button>
-            <button id="transformBtn" style="flex-grow: 1; padding: 10px; background-color: #6c5ce7; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Transform Graph</button>
+        </div>
+        <div style="display: flex; gap: 5px;">
+            <button id="edgeTransformBtn" style="flex-grow: 1; padding: 10px; background-color: #6c5ce7; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Edge Transform</button>
+            <button id="vertexTransformBtn" style="flex-grow: 1; padding: 10px; background-color: #e17055; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Vertex Transform</button>
         </div>
         <div style="display: flex; gap: 5px;">
             <button id="dfsBtn" style="flex-grow: 1; padding: 10px; background-color: #00b894; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">DFS Search</button>
             <button id="stopDfsBtn" disabled style="padding: 10px; background-color: #d63031; color: white; border: none; border-radius: 4px; cursor: pointer;">Stop DFS</button>
         </div>
         <div id="selectionInfo" style="padding: 8px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px;">
-            Select up to 2 edges to transform
+            Select 2 edges for edge transform or 1 vertex for vertex transform
         </div>
         <div id="dfsInfo" style="padding: 8px; background-color: #e8f8f5; border: 1px solid #00b894; border-radius: 4px; font-size: 12px; display: none;">
             DFS Status: Ready
@@ -48,13 +51,19 @@
         </div>
     </div>
     
-    <div id="transformationGraphContainer" style="position: absolute; top: 720px; left: 10px; width: 940px; border: 2px solid #636e72; border-radius: 8px; padding: 15px; background-color: #f5f5f5;">
+    <div id="transformationGraphContainer" style="position: absolute; top: 720px; left: 10px; width: 940px; height: 500px; border: 2px solid #636e72; border-radius: 8px; padding: 15px; background-color: #f5f5f5;">
         <h3 style="margin: 0 0 10px 0; color: #2d3436;">Transformation Graph Statistics</h3>
         <div id="transformationGraphInfo" style="font-size: 13px; color: #2d3436; line-height: 1.6;">
             States explored: 0 | Edges: 0
         </div>
         <div style="font-size: 11px; color: #636e72; margin-top: 8px; font-style: italic;">
             Manual exploration mode: Click cycle buttons to build the transformation graph. Each state is tracked but not rendered for performance.
+        </div>
+        <div style="margin-top: 10px;">
+            <button id="renderGraphBtn" style="padding: 8px 16px; background-color: #636e72; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Render Transformation Graph</button>
+            <button id="clearGraphRenderBtn" style="padding: 8px 16px; background-color: #b2bec3; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px;">Clear Render</button>
+        </div>
+        <div id="transformationGraphRender" style="margin-top: 10px; position: relative; width: 100%; height: 350px; border: 1px solid #dfe6e9; border-radius: 4px; background-color: white;">
         </div>
     </div>
     
