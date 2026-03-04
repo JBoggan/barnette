@@ -14,10 +14,16 @@
             <button id="undoBtn" disabled style="padding: 10px; background-color: #a29bfe; color: white; border: none; border-radius: 4px; cursor: pointer;">Undo</button>
             <button id="transformBtn" style="flex-grow: 1; padding: 10px; background-color: #6c5ce7; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Transform Graph</button>
         </div>
+        <div style="display: flex; gap: 5px;">
+            <button id="dfsBtn" style="flex-grow: 1; padding: 10px; background-color: #00b894; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">DFS Search</button>
+            <button id="stopDfsBtn" disabled style="padding: 10px; background-color: #d63031; color: white; border: none; border-radius: 4px; cursor: pointer;">Stop DFS</button>
+        </div>
         <div id="selectionInfo" style="padding: 8px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px;">
             Select up to 2 edges to transform
         </div>
-        
+        <div id="dfsInfo" style="padding: 8px; background-color: #e8f8f5; border: 1px solid #00b894; border-radius: 4px; font-size: 12px; display: none;">
+            DFS Status: Ready
+        </div>
     </div>
 
     <div id="spanCountsContainer" style="position: absolute; top: 10px; right: 440px; width: 120px; height: 620px; border: 2px solid #00b894; border-radius: 8px; padding: 10px; overflow-y: auto; background-color: #f0fff4;">
@@ -41,6 +47,14 @@
             <h3 style="margin: 0 0 10px 0; color: #0984e3;">Blue/Green Cycles</h3>
         </div>
     </div>
-    <script src="visual.js?v=21"></script>
+    
+    <div id="transformationGraphContainer" style="position: absolute; top: 720px; left: 10px; width: 940px; border: 2px solid #636e72; border-radius: 8px; padding: 10px; background-color: #f5f5f5;">
+        <h3 style="margin: 0 0 10px 0; color: #2d3436;">Transformation Graph</h3>
+        <div id="transformationGraphInfo" style="font-size: 11px; color: #636e72; margin-bottom: 10px;">
+            States explored: 0 | Edges: 0
+        </div>
+    </div>
+    
+    <script src="visual.js?v=22"></script>
 </body>
 </html> 

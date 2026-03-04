@@ -7,6 +7,16 @@ var svg = d3.select("body").append("svg")
 
 var swap = [];
 
+// DFS state space exploration variables
+var dfsRunning = false;
+var dfsStopRequested = false;
+var visitedStates = new Map(); // Maps state hash to state data
+var transformationGraph = { nodes: [], links: [] };
+var stateIdCounter = 0;
+var transformationSvg = null;
+var transformationSvgWidth = 920;
+var transformationSvgHeight = 400;
+
 const cubeGraphData = {
   "nodes":[
     {
@@ -385,10 +395,8 @@ var previousState = null;
 var uniqueSpans = [];
 
 document.addEventListener('DOMContentLoaded', (event) => {
-    // Automatically calculate and display all three cycle types when the page loads
     recalculateAllCycles();
     
-    // Add transform button event listener
     const transformBtn = document.getElementById('transformBtn');
     if (transformBtn) {
         transformBtn.addEventListener('click', performTransformation);
@@ -409,7 +417,17 @@ document.addEventListener('DOMContentLoaded', (event) => {
         reloadDodecahedronBtn.addEventListener('click', () => loadGraph(dodecahedronGraphData));
     }
 
-    // Initialize debug info
+    const dfsBtn = document.getElementById('dfsBtn');
+    if (dfsBtn) {
+        dfsBtn.addEventListener('click', startDFS);
+    }
+
+    const stopDfsBtn = document.getElementById('stopDfsBtn');
+    if (stopDfsBtn) {
+        stopDfsBtn.addEventListener('click', stopDFS);
+    }
+
+    initializeTransformationGraph();
     updateDebugInfo();
 });
 
@@ -720,10 +738,8 @@ function performTransformation() {
 }
 
 function loadGraph(graphData) {
-    // Restore the graph data from the provided data object
     json = JSON.parse(JSON.stringify(graphData));
     
-    // The `edges` array also needs to be rebuilt from the restored json.links
     edges = [];
     json.links.forEach(function(e) { 
         var sourceNode = json.nodes.find(function(n) { return n.id === e.source; });
@@ -733,26 +749,42 @@ function loadGraph(graphData) {
         }
     });
 
-    // Reset nextNodeId to be one greater than the max node ID in the loaded graph
     nextNodeId = (json.nodes.length > 0) ? Math.max(...json.nodes.map(n => n.id)) + 1 : 1;
 
-    // Clear the stored state for undo
     previousState = null;
     document.getElementById('undoBtn').disabled = true;
 
-    // Clear any active selection and reset visual state
     selectedEdges = [];
     if (typeof link !== 'undefined' && link) {
         link.style("stroke-width", 3).style("filter", "none");
     }
     updateSelectionInfo();
 
-    // Redraw the graph with the new data
     redrawGraph();
     uniqueSpans = [];
     recalculateAllCycles();
-    renderSpanCounts(); // Clear counts
+    renderSpanCounts();
     updateDebugInfo();
+    
+    visitedStates.clear();
+    transformationGraph = { nodes: [], links: [] };
+    stateIdCounter = 0;
+    
+    const initialState = cloneGraphState();
+    const initialHash = getStateHash(initialState.nodes, initialState.links);
+    
+    const initialStateNode = {
+        id: stateIdCounter++,
+        hash: initialHash,
+        state: initialState,
+        depth: 0
+    };
+    
+    visitedStates.set(initialHash, initialStateNode);
+    transformationGraph.nodes.push(initialStateNode);
+    
+    updateTransformationGraphInfo();
+    redrawTransformationGraph();
 }
 
 function undoTransformation() {
@@ -923,14 +955,15 @@ function uniqueCycles(cycles) {
 }
 
 function swapCycleColors(cycle, color1, color2) {
-    // Find all edges that belong to this cycle
+    const beforeState = cloneGraphState();
+    const beforeHash = getStateHash(beforeState.nodes, beforeState.links);
+    
     const cycleEdges = [];
     
     for (let i = 0; i < cycle.length; i++) {
         const currentNode = cycle[i];
-        const nextNode = cycle[(i + 1) % cycle.length]; // Wrap around to first node
+        const nextNode = cycle[(i + 1) % cycle.length];
         
-        // Find the edge connecting these two nodes
         const edge = edges.find(e => 
             (e.source.id === currentNode.id && e.target.id === nextNode.id) ||
             (e.source.id === nextNode.id && e.target.id === currentNode.id)
@@ -941,22 +974,30 @@ function swapCycleColors(cycle, color1, color2) {
         }
     }
     
-    // Swap colors for all edges in the cycle
     cycleEdges.forEach(edge => {
-        if (edge.col === color1) {
-            edge.col = color2;
-        } else if (edge.col === color2) {
-            edge.col = color1;
+        const oldColor = edge.col;
+        const newColor = (oldColor === color1) ? color2 : color1;
+        edge.col = newColor;
+        
+        const jsonLink = json.links.find(l => 
+            (l.source === edge.source.id && l.target === edge.target.id) ||
+            (l.source === edge.target.id && l.target === edge.source.id)
+        );
+        if (jsonLink) {
+            jsonLink.col = newColor;
         }
     });
     
-    // Update the visual display
     link.style("stroke", function(d) {
         return d.col;
     });
     
-    // Recalculate all three cycle types after the color swap
     recalculateAllCycles();
+    
+    const afterState = cloneGraphState();
+    const afterHash = getStateHash(afterState.nodes, afterState.links);
+    
+    addStateTransition(beforeState, beforeHash, afterState, afterHash, cycle, color1, color2);
 }
 
 function recalculateAllCycles() {
@@ -1087,5 +1128,425 @@ function renderSpanCounts() {
         p.textContent = `${count} span${plural} w/ ${numCycles} cycle${cyclePlural}`;
         countsContainer.appendChild(p);
     });
+}
+
+function initializeTransformationGraph() {
+    const container = document.getElementById('transformationGraphContainer');
+    if (!container) return;
+    
+    transformationSvg = d3.select('#transformationGraphContainer')
+        .append('svg')
+        .attr('width', transformationSvgWidth)
+        .attr('height', transformationSvgHeight)
+        .style('background-color', 'white')
+        .style('border-radius', '4px');
+    
+    visitedStates.clear();
+    transformationGraph = { nodes: [], links: [] };
+    stateIdCounter = 0;
+    
+    const initialState = cloneGraphState();
+    const initialHash = getStateHash(initialState.nodes, initialState.links);
+    
+    const initialStateNode = {
+        id: stateIdCounter++,
+        hash: initialHash,
+        state: initialState,
+        depth: 0
+    };
+    
+    visitedStates.set(initialHash, initialStateNode);
+    transformationGraph.nodes.push(initialStateNode);
+    
+    updateTransformationGraphInfo();
+    redrawTransformationGraph();
+}
+
+function addStateTransition(beforeState, beforeHash, afterState, afterHash, cycle, color1, color2) {
+    let beforeNode = visitedStates.get(beforeHash);
+    
+    if (!beforeNode) {
+        beforeNode = {
+            id: stateIdCounter++,
+            hash: beforeHash,
+            state: beforeState,
+            depth: 0
+        };
+        visitedStates.set(beforeHash, beforeNode);
+        transformationGraph.nodes.push(beforeNode);
+    }
+    
+    let afterNode = visitedStates.get(afterHash);
+    
+    if (!afterNode) {
+        afterNode = {
+            id: stateIdCounter++,
+            hash: afterHash,
+            state: afterState,
+            depth: beforeNode.depth + 1
+        };
+        visitedStates.set(afterHash, afterNode);
+        transformationGraph.nodes.push(afterNode);
+    }
+    
+    const alreadyHasEdge = transformationGraph.links.some(link => 
+        link.source.id === beforeNode.id && link.target.id === afterNode.id
+    );
+    
+    if (!alreadyHasEdge) {
+        const cycleDesc = cycle.map(n => n.name).join('→');
+        const transformationEdge = {
+            source: beforeNode,
+            target: afterNode,
+            transformation: {
+                cycle: cycleDesc,
+                colors: `${color1}/${color2}`
+            }
+        };
+        transformationGraph.links.push(transformationEdge);
+    }
+    
+    updateTransformationGraphInfo();
+    redrawTransformationGraph();
+}
+
+function updateTransformationGraphInfo() {
+    const graphInfoDiv = document.getElementById('transformationGraphInfo');
+    if (graphInfoDiv) {
+        graphInfoDiv.textContent = `States explored: ${visitedStates.size} | Edges: ${transformationGraph.links.length}`;
+    }
+}
+
+function getStateHash(nodes, links) {
+    const nodeNameMap = new Map();
+    nodes.forEach(n => nodeNameMap.set(n.id, n.name));
+    
+    const edgeStrings = links.map(link => {
+        const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+        const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+        const sourceName = nodeNameMap.get(sourceId);
+        const targetName = nodeNameMap.get(targetId);
+        const minName = sourceName < targetName ? sourceName : targetName;
+        const maxName = sourceName < targetName ? targetName : sourceName;
+        return `${minName}-${maxName}:${link.col}`;
+    }).sort().join('|');
+    return edgeStrings;
+}
+
+function cloneGraphState() {
+    return {
+        nodes: JSON.parse(JSON.stringify(json.nodes)),
+        links: JSON.parse(JSON.stringify(json.links))
+    };
+}
+
+function restoreGraphState(state) {
+    json.nodes = JSON.parse(JSON.stringify(state.nodes));
+    json.links = JSON.parse(JSON.stringify(state.links));
+    
+    edges = [];
+    json.links.forEach(function(e) { 
+        var sourceNode = json.nodes.find(function(n) { return n.id === e.source; });
+        var targetNode = json.nodes.find(function(n) { return n.id === e.target; });
+        if (sourceNode && targetNode) {
+            edges.push({source: sourceNode, target: targetNode, col: e.col});
+        }
+    });
+    
+    nextNodeId = (json.nodes.length > 0) ? Math.max(...json.nodes.map(n => n.id)) + 1 : 1;
+}
+
+function getAllValidTransformations() {
+    const transformations = [];
+    const colorPairs = [
+        ['red', 'blue'],
+        ['red', 'green'],
+        ['blue', 'green']
+    ];
+    
+    colorPairs.forEach(([color1, color2]) => {
+        const cycles = findAlternatingCycles(json.nodes, edges, color1, color2);
+        cycles.forEach(cycle => {
+            transformations.push({ cycle, color1, color2 });
+        });
+    });
+    
+    return transformations;
+}
+
+function applyTransformationToState(state, transformation) {
+    restoreGraphState(state);
+    
+    const { cycle, color1, color2 } = transformation;
+    
+    for (let i = 0; i < cycle.length; i++) {
+        const currentNode = cycle[i];
+        const nextNode = cycle[(i + 1) % cycle.length];
+        
+        const edge = edges.find(e => 
+            (e.source.id === currentNode.id && e.target.id === nextNode.id) ||
+            (e.source.id === nextNode.id && e.target.id === currentNode.id)
+        );
+        
+        if (edge) {
+            const oldColor = edge.col;
+            const newColor = (oldColor === color1) ? color2 : color1;
+            edge.col = newColor;
+            
+            const jsonLink = json.links.find(l => 
+                (l.source === edge.source.id && l.target === edge.target.id) ||
+                (l.source === edge.target.id && l.target === edge.source.id)
+            );
+            if (jsonLink) {
+                jsonLink.col = newColor;
+            }
+        }
+    }
+    
+    return cloneGraphState();
+}
+
+async function startDFS() {
+    if (dfsRunning) {
+        alert('DFS is already running');
+        return;
+    }
+    
+    dfsRunning = true;
+    dfsStopRequested = false;
+    
+    document.getElementById('dfsBtn').disabled = true;
+    document.getElementById('stopDfsBtn').disabled = false;
+    document.getElementById('dfsInfo').style.display = 'block';
+    
+    visitedStates.clear();
+    transformationGraph = { nodes: [], links: [] };
+    stateIdCounter = 0;
+    
+    const initialState = cloneGraphState();
+    const initialHash = getStateHash(initialState.nodes, initialState.links);
+    
+    const initialStateNode = {
+        id: stateIdCounter++,
+        hash: initialHash,
+        state: initialState,
+        depth: 0
+    };
+    
+    visitedStates.set(initialHash, initialStateNode);
+    transformationGraph.nodes.push(initialStateNode);
+    
+    updateDFSInfo(1, 0, 0);
+    redrawTransformationGraph();
+    
+    await dfsExplore(initialStateNode);
+    
+    redrawTransformationGraph();
+    
+    restoreGraphState(initialState);
+    redrawGraph();
+    recalculateAllCycles();
+    updateSelectionInfo();
+    updateDebugInfo();
+    
+    if (!dfsStopRequested) {
+        updateDFSInfo(visitedStates.size, transformationGraph.links.length, 'Complete');
+    }
+    
+    dfsRunning = false;
+    document.getElementById('dfsBtn').disabled = false;
+    document.getElementById('stopDfsBtn').disabled = true;
+}
+
+function stopDFS() {
+    dfsStopRequested = true;
+    updateDFSInfo(visitedStates.size, transformationGraph.links.length, 'Stopped');
+}
+
+async function dfsExplore(stateNode) {
+    if (dfsStopRequested) return;
+    
+    restoreGraphState(stateNode.state);
+    redrawGraph();
+    recalculateAllCycles();
+    
+    const transformations = getAllValidTransformations();
+    
+    for (const transformation of transformations) {
+        if (dfsStopRequested) break;
+        
+        const savedState = cloneGraphState();
+        const newState = applyTransformationToState(stateNode.state, transformation);
+        
+        if (!newState) {
+            restoreGraphState(savedState);
+            continue;
+        }
+        
+        const newHash = getStateHash(newState.nodes, newState.links);
+        
+        if (!visitedStates.has(newHash)) {
+            const newStateNode = {
+                id: stateIdCounter++,
+                hash: newHash,
+                state: newState,
+                depth: stateNode.depth + 1
+            };
+            
+            visitedStates.set(newHash, newStateNode);
+            transformationGraph.nodes.push(newStateNode);
+            
+            const cycleDesc = transformation.cycle.map(n => n.name).join('→');
+            const transformationEdge = {
+                source: stateNode,
+                target: newStateNode,
+                transformation: {
+                    cycle: cycleDesc,
+                    colors: `${transformation.color1}/${transformation.color2}`
+                }
+            };
+            transformationGraph.links.push(transformationEdge);
+            
+            updateDFSInfo(visitedStates.size, transformationGraph.links.length, stateNode.depth + 1);
+            
+            if (transformationGraph.nodes.length % 5 === 0) {
+                redrawTransformationGraph();
+            }
+            
+            await sleep(5);
+            
+            await dfsExplore(newStateNode);
+        } else {
+            const existingStateNode = visitedStates.get(newHash);
+            const alreadyHasEdge = transformationGraph.links.some(link => 
+                link.source.id === stateNode.id && link.target.id === existingStateNode.id
+            );
+            
+            if (!alreadyHasEdge) {
+                const cycleDesc = transformation.cycle.map(n => n.name).join('→');
+                const transformationEdge = {
+                    source: stateNode,
+                    target: existingStateNode,
+                    transformation: {
+                        cycle: cycleDesc,
+                        colors: `${transformation.color1}/${transformation.color2}`
+                    }
+                };
+                transformationGraph.links.push(transformationEdge);
+                
+                if (transformationGraph.links.length % 10 === 0) {
+                    redrawTransformationGraph();
+                }
+            }
+        }
+        
+        restoreGraphState(savedState);
+    }
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function updateDFSInfo(statesExplored, edgesFound, currentDepth) {
+    const infoDiv = document.getElementById('dfsInfo');
+    const graphInfoDiv = document.getElementById('transformationGraphInfo');
+    
+    if (infoDiv) {
+        if (typeof currentDepth === 'string') {
+            infoDiv.textContent = `DFS Status: ${currentDepth} | States: ${statesExplored} | Edges: ${edgesFound}`;
+        } else {
+            infoDiv.textContent = `DFS Status: Running (depth ${currentDepth}) | States: ${statesExplored}`;
+        }
+    }
+    
+    if (graphInfoDiv) {
+        graphInfoDiv.textContent = `States explored: ${statesExplored} | Edges: ${edgesFound}`;
+    }
+}
+
+function redrawTransformationGraph() {
+    if (!transformationSvg) return;
+    
+    transformationSvg.selectAll('*').remove();
+    
+    if (transformationGraph.nodes.length === 0) return;
+    
+    const force = d3.layout.force()
+        .nodes(transformationGraph.nodes)
+        .links(transformationGraph.links)
+        .size([transformationSvgWidth, transformationSvgHeight])
+        .linkDistance(80)
+        .charge(-300)
+        .gravity(0.05)
+        .start();
+    
+    const transformLink = transformationSvg.selectAll('.transform-link')
+        .data(transformationGraph.links)
+        .enter().append('line')
+        .attr('class', 'transform-link')
+        .style('stroke', '#95a5a6')
+        .style('stroke-width', 1.5)
+        .style('stroke-opacity', 0.6);
+    
+    transformLink.append('title')
+        .text(function(d) {
+            if (d.transformation) {
+                return `Swap cycle: ${d.transformation.cycle}\nColors: ${d.transformation.colors}`;
+            }
+            return 'Transformation';
+        });
+    
+    const transformNodeGroup = transformationSvg.selectAll('.transform-node')
+        .data(transformationGraph.nodes)
+        .enter().append('g')
+        .attr('class', 'transform-node')
+        .style('cursor', 'pointer')
+        .on('click', function(d) {
+            restoreGraphState(d.state);
+            selectedEdges = [];
+            redrawGraph();
+            recalculateAllCycles();
+            updateSelectionInfo();
+            updateDebugInfo();
+        })
+        .call(force.drag);
+    
+    transformNodeGroup.append('circle')
+        .attr('r', function(d) { return d.depth === 0 ? 8 : 5; })
+        .style('fill', function(d) {
+            if (d.depth === 0) return '#e74c3c';
+            const depth = d.depth || 0;
+            const hue = (depth * 30) % 360;
+            return `hsl(${hue}, 70%, 60%)`;
+        })
+        .style('stroke', '#2d3436')
+        .style('stroke-width', function(d) { return d.depth === 0 ? 2.5 : 1.5; });
+    
+    transformNodeGroup.append('text')
+        .attr('dx', 8)
+        .attr('dy', 3)
+        .style('font-size', '9px')
+        .style('fill', '#2d3436')
+        .text(function(d) { return d.id; });
+    
+    transformNodeGroup.append('title')
+        .text(function(d) { 
+            return `State ${d.id} (depth ${d.depth})\nClick to load this state`;
+        });
+    
+    force.on('tick', function() {
+        transformLink
+            .attr('x1', function(d) { return d.source.x; })
+            .attr('y1', function(d) { return d.source.y; })
+            .attr('x2', function(d) { return d.target.x; })
+            .attr('y2', function(d) { return d.target.y; });
+        
+        transformNodeGroup
+            .attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; });
+    });
+    
+    for (let i = 0; i < 100; i++) force.tick();
+    force.stop();
 }
 
