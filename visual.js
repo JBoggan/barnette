@@ -160,40 +160,40 @@ const dodecahedronGraphData = {
     ],
     "links": [
         {"source": 1, "target": 2, "col": "red"},
-        {"source": 2, "target": 3, "col": "red"},
+        {"source": 2, "target": 3, "col": "green"},
         {"source": 3, "target": 4, "col": "red"},
-        {"source": 4, "target": 5, "col": "red"},
-        {"source": 5, "target": 1, "col": "red"},
+        {"source": 4, "target": 5, "col": "green"},
+        {"source": 5, "target": 1, "col": "blue"},
 
-        {"source": 6, "target": 7, "col": "red"},
-        {"source": 7, "target": 8, "col": "red"},
-        {"source": 8, "target": 9, "col": "red"},
-        {"source": 9, "target": 10, "col": "red"},
-        {"source": 10, "target": 6, "col": "red"},
-
-        {"source": 11, "target": 12, "col": "red"},
-        {"source": 12, "target": 13, "col": "red"},
+        {"source": 6, "target": 7, "col": "green"},
+        {"source": 7, "target": 8, "col": "blue"},
+        {"source": 8, "target": 11, "col": "green"},
+        {"source": 11, "target": 13, "col": "blue"},
         {"source": 13, "target": 14, "col": "red"},
-        {"source": 14, "target": 15, "col": "red"},
-        {"source": 15, "target": 11, "col": "red"},
 
-        {"source": 16, "target": 17, "col": "red"},
-        {"source": 17, "target": 18, "col": "red"},
-        {"source": 18, "target": 19, "col": "red"},
-        {"source": 19, "target": 20, "col": "red"},
-        {"source": 20, "target": 16, "col": "red"},
+        {"source": 14, "target": 15, "col": "blue"},
+        {"source": 15, "target": 17, "col": "red"},
+        {"source": 17, "target": 16, "col": "blue"},
+        {"source": 16, "target": 18, "col": "red"},
+        {"source": 18, "target": 6, "col": "green"},
 
-        {"source": 1, "target": 14, "col": "green"},
-        {"source": 2, "target": 13, "col": "green"},
-        {"source": 3, "target": 12, "col": "green"},
-        {"source": 4, "target": 11, "col": "green"},
-        {"source": 5, "target": 15, "col": "green"},
+        {"source": 7, "target": 9, "col": "red"},
+        {"source": 11, "target": 10, "col": "green"},
+        {"source": 14, "target": 12, "col": "red"},
+        {"source": 17, "target": 20, "col": "green"},
+        {"source": 18, "target": 19, "col": "blue"},
 
-        {"source": 6, "target": 19, "col": "blue"},
-        {"source": 7, "target": 18, "col": "blue"},
-        {"source": 8, "target": 17, "col": "blue"},
-        {"source": 9, "target": 16, "col": "blue"},
-        {"source": 10, "target": 20, "col": "blue"}
+        {"source": 1, "target": 16, "col": "green"},
+        {"source": 2, "target": 15, "col": "blue"},
+        {"source": 3, "target": 13, "col": "blue"},
+        {"source": 4, "target": 8, "col": "red"},
+        {"source": 5, "target": 6, "col": "red"},
+
+        {"source": 20, "target": 12, "col": "blue"},
+        {"source": 12, "target": 10, "col": "red"},
+        {"source": 10, "target": 9, "col": "red"},
+        {"source": 9, "target": 19, "col": "green"},
+        {"source": 19, "target": 20, "col": "green"}
     ]
 };
 
