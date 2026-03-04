@@ -7,15 +7,12 @@ var svg = d3.select("body").append("svg")
 
 var swap = [];
 
-// DFS state space exploration variables
+// State space exploration variables
 var dfsRunning = false;
 var dfsStopRequested = false;
-var visitedStates = new Map(); // Maps state hash to state data
+var visitedStates = new Map();
 var transformationGraph = { nodes: [], links: [] };
 var stateIdCounter = 0;
-var transformationSvg = null;
-var transformationSvgWidth = 920;
-var transformationSvgHeight = 400;
 
 const cubeGraphData = {
   "nodes":[
@@ -784,7 +781,6 @@ function loadGraph(graphData) {
     transformationGraph.nodes.push(initialStateNode);
     
     updateTransformationGraphInfo();
-    redrawTransformationGraph();
 }
 
 function undoTransformation() {
@@ -1131,16 +1127,6 @@ function renderSpanCounts() {
 }
 
 function initializeTransformationGraph() {
-    const container = document.getElementById('transformationGraphContainer');
-    if (!container) return;
-    
-    transformationSvg = d3.select('#transformationGraphContainer')
-        .append('svg')
-        .attr('width', transformationSvgWidth)
-        .attr('height', transformationSvgHeight)
-        .style('background-color', 'white')
-        .style('border-radius', '4px');
-    
     visitedStates.clear();
     transformationGraph = { nodes: [], links: [] };
     stateIdCounter = 0;
@@ -1159,7 +1145,6 @@ function initializeTransformationGraph() {
     transformationGraph.nodes.push(initialStateNode);
     
     updateTransformationGraphInfo();
-    redrawTransformationGraph();
 }
 
 function addStateTransition(beforeState, beforeHash, afterState, afterHash, cycle, color1, color2) {
@@ -1207,13 +1192,33 @@ function addStateTransition(beforeState, beforeHash, afterState, afterHash, cycl
     }
     
     updateTransformationGraphInfo();
-    redrawTransformationGraph();
 }
 
 function updateTransformationGraphInfo() {
     const graphInfoDiv = document.getElementById('transformationGraphInfo');
     if (graphInfoDiv) {
-        graphInfoDiv.textContent = `States explored: ${visitedStates.size} | Edges: ${transformationGraph.links.length}`;
+        const depthCounts = {};
+        transformationGraph.nodes.forEach(node => {
+            const depth = node.depth || 0;
+            depthCounts[depth] = (depthCounts[depth] || 0) + 1;
+        });
+        
+        const maxDepth = Math.max(...Object.keys(depthCounts).map(Number), 0);
+        const depthInfo = Object.keys(depthCounts)
+            .sort((a, b) => Number(a) - Number(b))
+            .map(d => `depth ${d}: ${depthCounts[d]}`)
+            .join(' | ');
+        
+        graphInfoDiv.innerHTML = `
+            <div style="margin-bottom: 8px;">
+                <strong>States explored:</strong> ${visitedStates.size} | 
+                <strong>Transitions:</strong> ${transformationGraph.links.length} | 
+                <strong>Max depth:</strong> ${maxDepth}
+            </div>
+            <div style="font-size: 11px; color: #636e72;">
+                ${depthInfo}
+            </div>
+        `;
     }
 }
 
@@ -1337,11 +1342,8 @@ async function startDFS() {
     transformationGraph.nodes.push(initialStateNode);
     
     updateDFSInfo(1, 0, 0);
-    redrawTransformationGraph();
     
     await dfsExplore(initialStateNode);
-    
-    redrawTransformationGraph();
     
     restoreGraphState(initialState);
     redrawGraph();
@@ -1409,10 +1411,6 @@ async function dfsExplore(stateNode) {
             
             updateDFSInfo(visitedStates.size, transformationGraph.links.length, stateNode.depth + 1);
             
-            if (transformationGraph.nodes.length % 5 === 0) {
-                redrawTransformationGraph();
-            }
-            
             await sleep(5);
             
             await dfsExplore(newStateNode);
@@ -1433,10 +1431,6 @@ async function dfsExplore(stateNode) {
                     }
                 };
                 transformationGraph.links.push(transformationEdge);
-                
-                if (transformationGraph.links.length % 10 === 0) {
-                    redrawTransformationGraph();
-                }
             }
         }
         
@@ -1466,87 +1460,8 @@ function updateDFSInfo(statesExplored, edgesFound, currentDepth) {
 }
 
 function redrawTransformationGraph() {
-    if (!transformationSvg) return;
-    
-    transformationSvg.selectAll('*').remove();
-    
-    if (transformationGraph.nodes.length === 0) return;
-    
-    const force = d3.layout.force()
-        .nodes(transformationGraph.nodes)
-        .links(transformationGraph.links)
-        .size([transformationSvgWidth, transformationSvgHeight])
-        .linkDistance(80)
-        .charge(-300)
-        .gravity(0.05)
-        .start();
-    
-    const transformLink = transformationSvg.selectAll('.transform-link')
-        .data(transformationGraph.links)
-        .enter().append('line')
-        .attr('class', 'transform-link')
-        .style('stroke', '#95a5a6')
-        .style('stroke-width', 1.5)
-        .style('stroke-opacity', 0.6);
-    
-    transformLink.append('title')
-        .text(function(d) {
-            if (d.transformation) {
-                return `Swap cycle: ${d.transformation.cycle}\nColors: ${d.transformation.colors}`;
-            }
-            return 'Transformation';
-        });
-    
-    const transformNodeGroup = transformationSvg.selectAll('.transform-node')
-        .data(transformationGraph.nodes)
-        .enter().append('g')
-        .attr('class', 'transform-node')
-        .style('cursor', 'pointer')
-        .on('click', function(d) {
-            restoreGraphState(d.state);
-            selectedEdges = [];
-            redrawGraph();
-            recalculateAllCycles();
-            updateSelectionInfo();
-            updateDebugInfo();
-        })
-        .call(force.drag);
-    
-    transformNodeGroup.append('circle')
-        .attr('r', function(d) { return d.depth === 0 ? 8 : 5; })
-        .style('fill', function(d) {
-            if (d.depth === 0) return '#e74c3c';
-            const depth = d.depth || 0;
-            const hue = (depth * 30) % 360;
-            return `hsl(${hue}, 70%, 60%)`;
-        })
-        .style('stroke', '#2d3436')
-        .style('stroke-width', function(d) { return d.depth === 0 ? 2.5 : 1.5; });
-    
-    transformNodeGroup.append('text')
-        .attr('dx', 8)
-        .attr('dy', 3)
-        .style('font-size', '9px')
-        .style('fill', '#2d3436')
-        .text(function(d) { return d.id; });
-    
-    transformNodeGroup.append('title')
-        .text(function(d) { 
-            return `State ${d.id} (depth ${d.depth})\nClick to load this state`;
-        });
-    
-    force.on('tick', function() {
-        transformLink
-            .attr('x1', function(d) { return d.source.x; })
-            .attr('y1', function(d) { return d.source.y; })
-            .attr('x2', function(d) { return d.target.x; })
-            .attr('y2', function(d) { return d.target.y; });
-        
-        transformNodeGroup
-            .attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; });
-    });
-    
-    for (let i = 0; i < 100; i++) force.tick();
-    force.stop();
+    // Disabled rendering for performance - just keep the data structure
+    // The statistics are still updated via updateTransformationGraphInfo()
+    return;
 }
 
