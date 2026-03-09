@@ -2,4 +2,136 @@
   stroke: #999;
   stroke-opacity: .6;
   stroke-width: 1.5px;
+}
+
+/* Dark mode styles */
+body.dark-mode {
+  background-color: #1a1a2e;
+  color: #e0e0e0;
+}
+
+body.dark-mode svg {
+  background-color: #1a1a2e;
+}
+
+body.dark-mode .node text {
+  fill: #e0e0e0;
+}
+
+body.dark-mode #transformControls button {
+  opacity: 0.9;
+}
+
+body.dark-mode #selectionInfo {
+  background-color: #2d2d44 !important;
+  border-color: #444 !important;
+  color: #e0e0e0 !important;
+}
+
+body.dark-mode #dfsInfo {
+  background-color: #1a3a2e !important;
+  border-color: #00b894 !important;
+  color: #e0e0e0 !important;
+}
+
+body.dark-mode #spanCountsContainer {
+  background-color: #1a2e1a !important;
+  border-color: #00b894 !important;
+  color: #e0e0e0 !important;
+}
+
+body.dark-mode #spansContainer {
+  background-color: #1a1a2e !important;
+  border-color: #6c5ce7 !important;
+  color: #e0e0e0 !important;
+}
+
+body.dark-mode #spansContainer h3,
+body.dark-mode #spanCountsContainer h3 {
+  color: #a29bfe !important;
+}
+
+body.dark-mode .span-item {
+  background-color: #2d2d44 !important;
+  border-color: #555 !important;
+  color: #e0e0e0 !important;
+}
+
+body.dark-mode #redBlueCycles {
+  background-color: #2e1a1a !important;
+  border-color: #ff6b6b !important;
+}
+
+body.dark-mode #redBlueCycles h3 {
+  color: #ff6b6b !important;
+}
+
+body.dark-mode #redGreenCycles {
+  background-color: #1a2e1a !important;
+  border-color: #00b894 !important;
+}
+
+body.dark-mode #redGreenCycles h3 {
+  color: #55efc4 !important;
+}
+
+body.dark-mode #blueGreenCycles {
+  background-color: #1a1a2e !important;
+  border-color: #74b9ff !important;
+}
+
+body.dark-mode #blueGreenCycles h3 {
+  color: #74b9ff !important;
+}
+
+body.dark-mode #redBlueCycles button,
+body.dark-mode #redGreenCycles button,
+body.dark-mode #blueGreenCycles button {
+  background-color: #2d2d44 !important;
+  color: #e0e0e0 !important;
+  border-color: #555 !important;
+}
+
+body.dark-mode #redBlueCycles button:hover,
+body.dark-mode #redGreenCycles button:hover,
+body.dark-mode #blueGreenCycles button:hover {
+  background-color: #3d3d54 !important;
+}
+
+body.dark-mode #transformationGraphContainer {
+  background-color: #2d2d44 !important;
+  border-color: #555 !important;
+}
+
+body.dark-mode #transformationGraphContainer h3 {
+  color: #e0e0e0 !important;
+}
+
+body.dark-mode #transformationGraphInfo {
+  color: #e0e0e0 !important;
+}
+
+body.dark-mode #transformationGraphRender {
+  background-color: #1a1a2e !important;
+  border-color: #444 !important;
+}
+
+body.dark-mode .tg-node text {
+  fill: #e0e0e0 !important;
+}
+
+/* Dark mode toggle button */
+#darkModeToggle {
+  padding: 10px;
+  background-color: #2d3436;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+body.dark-mode #darkModeToggle {
+  background-color: #ffeaa7;
+  color: #2d3436;
 } 

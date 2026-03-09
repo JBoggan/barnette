@@ -441,9 +441,35 @@ document.addEventListener('DOMContentLoaded', (event) => {
         clearGraphRenderBtn.addEventListener('click', clearTransformationGraphRender);
     }
 
+    // Dark mode toggle
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    if (darkModeToggle) {
+        // Check for saved preference or system preference
+        const savedDarkMode = localStorage.getItem('darkMode');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedDarkMode === 'true' || (savedDarkMode === null && prefersDark)) {
+            document.body.classList.add('dark-mode');
+            darkModeToggle.textContent = '☀️';
+        }
+        
+        darkModeToggle.addEventListener('click', toggleDarkMode);
+    }
+
     initializeTransformationGraph();
     updateDebugInfo();
 });
+
+function toggleDarkMode() {
+    const body = document.body;
+    const toggle = document.getElementById('darkModeToggle');
+    
+    body.classList.toggle('dark-mode');
+    
+    const isDarkMode = body.classList.contains('dark-mode');
+    toggle.textContent = isDarkMode ? '☀️' : '🌙';
+    localStorage.setItem('darkMode', isDarkMode);
+}
 
 function selectEdge(edgeElement, edgeData) {
     const index = selectedEdges.findIndex(e => e === edgeData);
