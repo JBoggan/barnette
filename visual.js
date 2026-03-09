@@ -1355,7 +1355,8 @@ function addStateTransition(beforeState, beforeHash, afterState, afterHash, cycl
     }
     
     const alreadyHasEdge = transformationGraph.links.some(link => 
-        link.source.id === beforeNode.id && link.target.id === afterNode.id
+        (link.source.id === beforeNode.id && link.target.id === afterNode.id) ||
+        (link.source.id === afterNode.id && link.target.id === beforeNode.id)
     );
     
     if (!alreadyHasEdge) {
@@ -1597,7 +1598,8 @@ async function dfsExplore(stateNode) {
         } else {
             const existingStateNode = visitedStates.get(newHash);
             const alreadyHasEdge = transformationGraph.links.some(link => 
-                link.source.id === stateNode.id && link.target.id === existingStateNode.id
+                (link.source.id === stateNode.id && link.target.id === existingStateNode.id) ||
+                (link.source.id === existingStateNode.id && link.target.id === stateNode.id)
             );
             
             if (!alreadyHasEdge) {
