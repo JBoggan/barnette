@@ -1411,20 +1411,11 @@ function updateTransformationGraphInfo() {
         });
         
         const maxDepth = Math.max(...Object.keys(depthCounts).map(Number), 0);
-        const depthInfo = Object.keys(depthCounts)
-            .sort((a, b) => Number(a) - Number(b))
-            .map(d => `depth ${d}: ${depthCounts[d]}`)
-            .join(' | ');
         
         graphInfoDiv.innerHTML = `
-            <div style="margin-bottom: 8px;">
-                <strong>States explored:</strong> ${visitedStates.size} | 
-                <strong>Transitions:</strong> ${transformationGraph.links.length} | 
-                <strong>Max depth:</strong> ${maxDepth}
-            </div>
-            <div style="font-size: 11px; color: #636e72;">
-                ${depthInfo}
-            </div>
+            <strong>States explored:</strong> ${visitedStates.size} | 
+            <strong>Transitions:</strong> ${transformationGraph.links.length} | 
+            <strong>Max depth:</strong> ${maxDepth}
         `;
     }
 }
