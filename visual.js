@@ -197,6 +197,128 @@ const dodecahedronGraphData = {
     ]
 };
 
+const tutteGraphData = {
+    "nodes": [
+        {"id": 1, "name": "a", "group": 0, "x": 700.0, "y": 400.0},
+        {"id": 2, "name": "b", "group": 0, "x": 697.2, "y": 440.8},
+        {"id": 3, "name": "c", "group": 0, "x": 688.9, "y": 480.9},
+        {"id": 4, "name": "d", "group": 0, "x": 675.2, "y": 519.5},
+        {"id": 5, "name": "e", "group": 0, "x": 656.3, "y": 555.9},
+        {"id": 6, "name": "f", "group": 0, "x": 632.7, "y": 589.3},
+        {"id": 7, "name": "g", "group": 0, "x": 604.8, "y": 619.3},
+        {"id": 8, "name": "h", "group": 0, "x": 573.0, "y": 645.1},
+        {"id": 9, "name": "i", "group": 0, "x": 538.0, "y": 666.4},
+        {"id": 10, "name": "j", "group": 0, "x": 500.5, "y": 682.7},
+        {"id": 11, "name": "k", "group": 0, "x": 461.0, "y": 693.7},
+        {"id": 12, "name": "l", "group": 0, "x": 420.5, "y": 699.3},
+        {"id": 13, "name": "m", "group": 0, "x": 379.5, "y": 699.3},
+        {"id": 14, "name": "n", "group": 0, "x": 339.0, "y": 693.7},
+        {"id": 15, "name": "o", "group": 0, "x": 299.5, "y": 682.7},
+        {"id": 16, "name": "p", "group": 0, "x": 262.0, "y": 666.4},
+        {"id": 17, "name": "q", "group": 0, "x": 227.0, "y": 645.1},
+        {"id": 18, "name": "r", "group": 0, "x": 195.2, "y": 619.3},
+        {"id": 19, "name": "s", "group": 0, "x": 167.3, "y": 589.3},
+        {"id": 20, "name": "t", "group": 0, "x": 143.7, "y": 555.9},
+        {"id": 21, "name": "u", "group": 0, "x": 124.8, "y": 519.5},
+        {"id": 22, "name": "v", "group": 0, "x": 111.1, "y": 480.9},
+        {"id": 23, "name": "w", "group": 0, "x": 102.8, "y": 440.8},
+        {"id": 24, "name": "x", "group": 0, "x": 100.0, "y": 400.0},
+        {"id": 25, "name": "y", "group": 0, "x": 102.8, "y": 359.2},
+        {"id": 26, "name": "z", "group": 0, "x": 111.1, "y": 319.1},
+        {"id": 27, "name": "aa", "group": 0, "x": 124.8, "y": 280.5},
+        {"id": 28, "name": "ab", "group": 0, "x": 143.7, "y": 244.1},
+        {"id": 29, "name": "ac", "group": 0, "x": 167.3, "y": 210.7},
+        {"id": 30, "name": "ad", "group": 0, "x": 195.2, "y": 180.7},
+        {"id": 31, "name": "ae", "group": 0, "x": 227.0, "y": 154.9},
+        {"id": 32, "name": "af", "group": 0, "x": 262.0, "y": 133.6},
+        {"id": 33, "name": "ag", "group": 0, "x": 697.2, "y": 359.2},
+        {"id": 34, "name": "ah", "group": 0, "x": 604.8, "y": 180.7},
+        {"id": 35, "name": "ai", "group": 0, "x": 299.5, "y": 117.3},
+        {"id": 36, "name": "aj", "group": 0, "x": 339.0, "y": 106.3},
+        {"id": 37, "name": "ak", "group": 0, "x": 379.5, "y": 100.7},
+        {"id": 38, "name": "al", "group": 0, "x": 420.5, "y": 100.7},
+        {"id": 39, "name": "am", "group": 0, "x": 632.7, "y": 210.7},
+        {"id": 40, "name": "an", "group": 0, "x": 656.3, "y": 244.1},
+        {"id": 41, "name": "ao", "group": 0, "x": 461.0, "y": 106.3},
+        {"id": 42, "name": "ap", "group": 0, "x": 500.5, "y": 117.3},
+        {"id": 43, "name": "aq", "group": 0, "x": 538.0, "y": 133.6},
+        {"id": 44, "name": "ar", "group": 0, "x": 573.0, "y": 154.9},
+        {"id": 45, "name": "as", "group": 0, "x": 675.2, "y": 280.5},
+        {"id": 46, "name": "at", "group": 0, "x": 688.9, "y": 319.1}
+    ],
+    "links": [
+        {"source": 1, "target": 2, "col": "red"},
+        {"source": 1, "target": 3, "col": "green"},
+        {"source": 1, "target": 4, "col": "blue"},
+        {"source": 2, "target": 5, "col": "red"},
+        {"source": 2, "target": 27, "col": "green"},
+        {"source": 3, "target": 11, "col": "blue"},
+        {"source": 3, "target": 12, "col": "red"},
+        {"source": 4, "target": 19, "col": "green"},
+        {"source": 4, "target": 20, "col": "blue"},
+        {"source": 5, "target": 6, "col": "red"},
+        {"source": 5, "target": 34, "col": "green"},
+        {"source": 6, "target": 7, "col": "blue"},
+        {"source": 6, "target": 30, "col": "red"},
+        {"source": 7, "target": 8, "col": "green"},
+        {"source": 7, "target": 28, "col": "blue"},
+        {"source": 8, "target": 9, "col": "red"},
+        {"source": 8, "target": 15, "col": "green"},
+        {"source": 9, "target": 10, "col": "blue"},
+        {"source": 9, "target": 39, "col": "red"},
+        {"source": 10, "target": 11, "col": "green"},
+        {"source": 10, "target": 38, "col": "blue"},
+        {"source": 11, "target": 40, "col": "red"},
+        {"source": 12, "target": 13, "col": "green"},
+        {"source": 12, "target": 40, "col": "blue"},
+        {"source": 13, "target": 14, "col": "red"},
+        {"source": 13, "target": 36, "col": "green"},
+        {"source": 14, "target": 15, "col": "blue"},
+        {"source": 14, "target": 16, "col": "red"},
+        {"source": 15, "target": 35, "col": "green"},
+        {"source": 16, "target": 17, "col": "blue"},
+        {"source": 16, "target": 23, "col": "red"},
+        {"source": 17, "target": 18, "col": "green"},
+        {"source": 17, "target": 45, "col": "blue"},
+        {"source": 18, "target": 19, "col": "red"},
+        {"source": 18, "target": 44, "col": "green"},
+        {"source": 19, "target": 46, "col": "blue"},
+        {"source": 20, "target": 21, "col": "red"},
+        {"source": 20, "target": 46, "col": "green"},
+        {"source": 21, "target": 22, "col": "blue"},
+        {"source": 21, "target": 42, "col": "red"},
+        {"source": 22, "target": 23, "col": "green"},
+        {"source": 22, "target": 24, "col": "blue"},
+        {"source": 23, "target": 41, "col": "red"},
+        {"source": 24, "target": 25, "col": "green"},
+        {"source": 24, "target": 28, "col": "blue"},
+        {"source": 25, "target": 26, "col": "red"},
+        {"source": 25, "target": 33, "col": "green"},
+        {"source": 26, "target": 27, "col": "blue"},
+        {"source": 26, "target": 32, "col": "red"},
+        {"source": 27, "target": 34, "col": "green"},
+        {"source": 28, "target": 29, "col": "blue"},
+        {"source": 29, "target": 30, "col": "red"},
+        {"source": 29, "target": 33, "col": "green"},
+        {"source": 30, "target": 31, "col": "blue"},
+        {"source": 31, "target": 32, "col": "red"},
+        {"source": 31, "target": 34, "col": "green"},
+        {"source": 32, "target": 33, "col": "blue"},
+        {"source": 35, "target": 36, "col": "red"},
+        {"source": 35, "target": 39, "col": "green"},
+        {"source": 36, "target": 37, "col": "blue"},
+        {"source": 37, "target": 38, "col": "red"},
+        {"source": 37, "target": 40, "col": "green"},
+        {"source": 38, "target": 39, "col": "blue"},
+        {"source": 41, "target": 42, "col": "red"},
+        {"source": 41, "target": 45, "col": "green"},
+        {"source": 42, "target": 43, "col": "blue"},
+        {"source": 43, "target": 44, "col": "red"},
+        {"source": 43, "target": 46, "col": "green"},
+        {"source": 44, "target": 45, "col": "blue"}
+    ]
+};
+
 var json = JSON.parse(JSON.stringify(cubeGraphData));
 
 var edges = [];
@@ -419,6 +541,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const reloadDodecahedronBtn = document.getElementById('reloadDodecahedronBtn');
     if (reloadDodecahedronBtn) {
         reloadDodecahedronBtn.addEventListener('click', () => loadGraph(dodecahedronGraphData));
+    }
+
+    const reloadTutteBtn = document.getElementById('reloadTutteBtn');
+    if (reloadTutteBtn) {
+        reloadTutteBtn.addEventListener('click', () => loadGraph(tutteGraphData));
     }
 
     const dfsBtn = document.getElementById('dfsBtn');
@@ -963,10 +1090,13 @@ function loadGraph(graphData) {
     updateSelectionInfo();
 
     redrawGraph();
-    uniqueSpans = [];
-    recalculateAllCycles();
-    renderSpanCounts();
     updateDebugInfo();
+
+    uniqueSpans = [];
+    setTimeout(function() {
+        recalculateAllCycles();
+        renderSpanCounts();
+    }, 0);
     
     visitedStates.clear();
     transformationGraph = { nodes: [], links: [] };
