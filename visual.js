@@ -197,6 +197,23 @@ const dodecahedronGraphData = {
     ]
 };
 
+const tetrahedronGraphData = {
+    "nodes": [
+        {"id": 1, "name": "a", "group": 0, "x": 400, "y": 100},
+        {"id": 2, "name": "b", "group": 1, "x": 150, "y": 560},
+        {"id": 3, "name": "c", "group": 2, "x": 650, "y": 560},
+        {"id": 4, "name": "d", "group": 3, "x": 400, "y": 390}
+    ],
+    "links": [
+        {"source": 1, "target": 2, "col": "red"},
+        {"source": 1, "target": 3, "col": "green"},
+        {"source": 1, "target": 4, "col": "blue"},
+        {"source": 2, "target": 3, "col": "blue"},
+        {"source": 2, "target": 4, "col": "green"},
+        {"source": 3, "target": 4, "col": "red"}
+    ]
+};
+
 const tutteGraphData = {
     "nodes": [
         {"id": 1, "name": "a", "group": 0, "x": 700.0, "y": 400.0},
@@ -517,69 +534,78 @@ var uniqueSpans = [];
 
 document.addEventListener('DOMContentLoaded', (event) => {
     recalculateAllCycles();
-    
+
+    // Dropdown toggle logic
+    document.querySelectorAll('.dropdown').forEach(function(dropdown) {
+        dropdown.querySelector('.dropdown-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = dropdown.classList.contains('open');
+            document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+            if (!isOpen) dropdown.classList.add('open');
+        });
+    });
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+    });
+
+    // Graph loading buttons
+    const graphButtons = {
+        'reloadCubeBtn': cubeGraphData,
+        'reloadTetrahedronBtn': tetrahedronGraphData,
+        'reloadDodecahedronBtn': dodecahedronGraphData,
+        'reloadTutteBtn': tutteGraphData
+    };
+    Object.entries(graphButtons).forEach(function([id, data]) {
+        const btn = document.getElementById(id);
+        if (btn) btn.addEventListener('click', function() {
+            loadGraph(data);
+            document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+        });
+    });
+
+    // Transform buttons
     const edgeTransformBtn = document.getElementById('edgeTransformBtn');
-    if (edgeTransformBtn) {
-        edgeTransformBtn.addEventListener('click', performEdgeTransformation);
-    }
+    if (edgeTransformBtn) edgeTransformBtn.addEventListener('click', function() {
+        performEdgeTransformation();
+        document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+    });
 
     const vertexTransformBtn = document.getElementById('vertexTransformBtn');
-    if (vertexTransformBtn) {
-        vertexTransformBtn.addEventListener('click', performVertexTransformation);
-    }
+    if (vertexTransformBtn) vertexTransformBtn.addEventListener('click', function() {
+        performVertexTransformation();
+        document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+    });
+
+    const tfInflationBtn = document.getElementById('tfInflationBtn');
+    if (tfInflationBtn) tfInflationBtn.addEventListener('click', function() {
+        performTFInflation();
+        document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+    });
 
     const undoBtn = document.getElementById('undoBtn');
-    if (undoBtn) {
-        undoBtn.addEventListener('click', undoTransformation);
-    }
-
-    const reloadCubeBtn = document.getElementById('reloadCubeBtn');
-    if (reloadCubeBtn) {
-        reloadCubeBtn.addEventListener('click', () => loadGraph(cubeGraphData));
-    }
-    
-    const reloadDodecahedronBtn = document.getElementById('reloadDodecahedronBtn');
-    if (reloadDodecahedronBtn) {
-        reloadDodecahedronBtn.addEventListener('click', () => loadGraph(dodecahedronGraphData));
-    }
-
-    const reloadTutteBtn = document.getElementById('reloadTutteBtn');
-    if (reloadTutteBtn) {
-        reloadTutteBtn.addEventListener('click', () => loadGraph(tutteGraphData));
-    }
+    if (undoBtn) undoBtn.addEventListener('click', undoTransformation);
 
     const dfsBtn = document.getElementById('dfsBtn');
-    if (dfsBtn) {
-        dfsBtn.addEventListener('click', startDFS);
-    }
+    if (dfsBtn) dfsBtn.addEventListener('click', startDFS);
 
     const stopDfsBtn = document.getElementById('stopDfsBtn');
-    if (stopDfsBtn) {
-        stopDfsBtn.addEventListener('click', stopDFS);
-    }
+    if (stopDfsBtn) stopDfsBtn.addEventListener('click', stopDFS);
 
     const renderGraphBtn = document.getElementById('renderGraphBtn');
-    if (renderGraphBtn) {
-        renderGraphBtn.addEventListener('click', renderTransformationGraph);
-    }
+    if (renderGraphBtn) renderGraphBtn.addEventListener('click', renderTransformationGraph);
 
     const clearGraphRenderBtn = document.getElementById('clearGraphRenderBtn');
-    if (clearGraphRenderBtn) {
-        clearGraphRenderBtn.addEventListener('click', clearTransformationGraphRender);
-    }
+    if (clearGraphRenderBtn) clearGraphRenderBtn.addEventListener('click', clearTransformationGraphRender);
 
     // Dark mode toggle
     const darkModeToggle = document.getElementById('darkModeToggle');
     if (darkModeToggle) {
-        // Check for saved preference or system preference
         const savedDarkMode = localStorage.getItem('darkMode');
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
         if (savedDarkMode === 'true' || (savedDarkMode === null && prefersDark)) {
             document.body.classList.add('dark-mode');
             darkModeToggle.textContent = '☀️';
         }
-        
         darkModeToggle.addEventListener('click', toggleDarkMode);
     }
 
@@ -1116,6 +1142,152 @@ function loadGraph(graphData) {
     transformationGraph.nodes.push(initialStateNode);
     
     updateTransformationGraphInfo();
+}
+
+// TF structure (local IDs 1-15, where 1=a, 2=b, 3=c are boundary attachment nodes):
+//   Boundary: a(1) connects to 4,8  |  b(2) connects to 5,9  |  c(3) connects to 6,9
+//   Internal edges: 4-5,4-15, 5-11, 6-7,6-14, 7-8,7-13, 8-15, 9-10, 10-11,10-14, 11-12, 12-13,12-15, 13-14
+//
+// Coloring rule (ca=color of v-a edge, cb=color of v-b edge, cc=color of v-c edge):
+//   a-4:cb  a-8:cc  b-5:ca  b-9:cc  c-6:ca  c-9:cb
+//   4-5:cc  4-15:ca  5-11:cb  6-7:cb  6-14:cc  7-8:ca  7-13:cc  8-15:cb
+//   9-10:ca  10-11:cc  10-14:cb  11-12:ca  12-13:cb  12-15:cc  13-14:ca
+function performTFInflation() {
+    if (!selectedVertex) {
+        alert("Please select exactly 1 vertex for TF-inflation.");
+        return;
+    }
+
+    previousState = {
+        nodes: JSON.parse(JSON.stringify(json.nodes)),
+        links: JSON.parse(JSON.stringify(json.links))
+    };
+
+    const v = selectedVertex;
+
+    const connectedEdges = edges.filter(e =>
+        e.source.id === v.id || e.target.id === v.id
+    );
+
+    if (connectedEdges.length !== 3) {
+        alert("Selected vertex must have exactly 3 edges (degree 3).");
+        return;
+    }
+
+    const neighbors = connectedEdges.map(e => ({
+        node: e.source.id === v.id ? e.target : e.source,
+        color: e.col
+    }));
+
+    const edgeColors = neighbors.map(n => n.color);
+    const allColors = ['red', 'green', 'blue'];
+    if (new Set(edgeColors).size !== 3) {
+        alert("TF-inflation requires the selected vertex to have 3 differently-colored edges (one red, one green, one blue).");
+        return;
+    }
+
+    // Assign roles: the neighbor via the red edge is 'a', green → 'b', blue → 'c'
+    const roleMap = {};
+    neighbors.forEach(n => { roleMap[n.color] = n.node; });
+    const na = roleMap['red'];
+    const nb = roleMap['green'];
+    const nc = roleMap['blue'];
+    const ca = 'red', cb = 'green', cc = 'blue';
+
+    // Generate 15 new node names (3 boundary + 12 internal)
+    const newNames = getNextNodeName(15);
+
+    // Position boundary nodes midway between v and their external neighbor
+    function midpoint(n1, n2, t) {
+        return { x: n1.x + (n2.x - n1.x) * t, y: n1.y + (n2.y - n1.y) * t };
+    }
+    const posA = midpoint(v, na, 0.45);
+    const posB = midpoint(v, nb, 0.45);
+    const posC = midpoint(v, nc, 0.45);
+
+    // Internal nodes arranged in a circle around v
+    const innerR = 30;
+    function ipos(i) {
+        const angle = (2 * Math.PI * i) / 12 - Math.PI / 2;
+        return { x: v.x + innerR * Math.cos(angle), y: v.y + innerR * Math.sin(angle) };
+    }
+
+    const nodeA  = { id: nextNodeId++, name: newNames[0],  group: 0, x: posA.x, y: posA.y };
+    const nodeB  = { id: nextNodeId++, name: newNames[1],  group: 0, x: posB.x, y: posB.y };
+    const nodeC  = { id: nextNodeId++, name: newNames[2],  group: 0, x: posC.x, y: posC.y };
+    const n4     = { id: nextNodeId++, name: newNames[3],  group: 0, ...ipos(0)  };
+    const n5     = { id: nextNodeId++, name: newNames[4],  group: 0, ...ipos(1)  };
+    const n6     = { id: nextNodeId++, name: newNames[5],  group: 0, ...ipos(2)  };
+    const n7     = { id: nextNodeId++, name: newNames[6],  group: 0, ...ipos(3)  };
+    const n8     = { id: nextNodeId++, name: newNames[7],  group: 0, ...ipos(4)  };
+    const n9     = { id: nextNodeId++, name: newNames[8],  group: 0, ...ipos(5)  };
+    const n10    = { id: nextNodeId++, name: newNames[9],  group: 0, ...ipos(6)  };
+    const n11    = { id: nextNodeId++, name: newNames[10], group: 0, ...ipos(7)  };
+    const n12    = { id: nextNodeId++, name: newNames[11], group: 0, ...ipos(8)  };
+    const n13    = { id: nextNodeId++, name: newNames[12], group: 0, ...ipos(9)  };
+    const n14    = { id: nextNodeId++, name: newNames[13], group: 0, ...ipos(10) };
+    const n15    = { id: nextNodeId++, name: newNames[14], group: 0, ...ipos(11) };
+
+    // Remove the inflated vertex and its edges
+    edges = edges.filter(e => !connectedEdges.includes(e));
+    json.links = json.links.filter(l => {
+        return !connectedEdges.some(ce =>
+            (l.source === ce.source.id && l.target === ce.target.id) ||
+            (l.source === ce.target.id && l.target === ce.source.id)
+        );
+    });
+    json.nodes = json.nodes.filter(n => n.id !== v.id);
+
+    const allNewNodes = [nodeA, nodeB, nodeC, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15];
+    json.nodes.push(...allNewNodes);
+
+    const newEdges = [
+        // External connections (replace v's old edges)
+        { source: nodeA, target: na,  col: ca },
+        { source: nodeB, target: nb,  col: cb },
+        { source: nodeC, target: nc,  col: cc },
+        // Boundary → internal
+        { source: nodeA, target: n4,  col: cb },
+        { source: nodeA, target: n8,  col: cc },
+        { source: nodeB, target: n5,  col: ca },
+        { source: nodeB, target: n9,  col: cc },
+        { source: nodeC, target: n6,  col: ca },
+        { source: nodeC, target: n9,  col: cb },
+        // Internal
+        { source: n4,  target: n5,  col: cc },
+        { source: n4,  target: n15, col: ca },
+        { source: n5,  target: n11, col: cb },
+        { source: n6,  target: n7,  col: cb },
+        { source: n6,  target: n14, col: cc },
+        { source: n7,  target: n8,  col: ca },
+        { source: n7,  target: n13, col: cc },
+        { source: n8,  target: n15, col: cb },
+        { source: n9,  target: n10, col: ca },
+        { source: n10, target: n11, col: cc },
+        { source: n10, target: n14, col: cb },
+        { source: n11, target: n12, col: ca },
+        { source: n12, target: n13, col: cb },
+        { source: n12, target: n15, col: cc },
+        { source: n13, target: n14, col: ca }
+    ];
+
+    edges.push(...newEdges);
+    newEdges.forEach(e => {
+        json.links.push({ source: e.source.id, target: e.target.id, col: e.col });
+    });
+
+    selectedVertex = null;
+    updateSelectionInfo();
+    redrawGraph();
+    updateDebugInfo();
+
+    uniqueSpans = [];
+    setTimeout(function() {
+        recalculateAllCycles();
+        renderSpanCounts();
+    }, 0);
+
+    document.getElementById('undoBtn').disabled = false;
 }
 
 function undoTransformation() {
