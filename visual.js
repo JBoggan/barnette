@@ -585,6 +585,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const undoBtn = document.getElementById('undoBtn');
     if (undoBtn) undoBtn.addEventListener('click', undoTransformation);
 
+    const exportJsonBtn = document.getElementById('exportJsonBtn');
+    if (exportJsonBtn) exportJsonBtn.addEventListener('click', function() {
+        exportGraphJSON();
+        document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+    });
+
+    const exportSvgBtn = document.getElementById('exportSvgBtn');
+    if (exportSvgBtn) exportSvgBtn.addEventListener('click', function() {
+        exportGraphSVG();
+        document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+    });
+
     const dfsBtn = document.getElementById('dfsBtn');
     if (dfsBtn) dfsBtn.addEventListener('click', startDFS);
 
@@ -645,10 +657,6 @@ function selectEdge(edgeElement, edgeData) {
 }
 
 function selectVertex(vertexElement, vertexData) {
-    // Clear any selected edges first
-    selectedEdges = [];
-    link.style("stroke-width", 3).style("filter", "none");
-    
     if (selectedVertex === vertexData) {
         // Deselect if clicking the same vertex
         selectedVertex = null;
@@ -678,20 +686,6 @@ function selectVertex(vertexElement, vertexData) {
 }
 
 function updateSelectionInfo() {
-    const infoDiv = document.getElementById('selectionInfo');
-    if (selectedVertex) {
-        infoDiv.textContent = `Selected vertex: ${selectedVertex.name}`;
-    } else if (selectedEdges.length === 0) {
-        infoDiv.textContent = "Select 2 edges for edge transform or 1 vertex for vertex transform";
-    } else if (selectedEdges.length === 1) {
-        const edge = selectedEdges[0];
-        infoDiv.textContent = `Selected edge: ${edge.source.name}-${edge.target.name}`;
-    } else {
-        const edge1 = selectedEdges[0];
-        const edge2 = selectedEdges[1];
-        infoDiv.textContent = `Selected edges: ${edge1.source.name}-${edge1.target.name}, ${edge2.source.name}-${edge2.target.name}`;
-    }
-    
     updateDebugInfo();
 }
 
@@ -836,10 +830,20 @@ function performEdgeTransformation() {
         links: JSON.parse(JSON.stringify(json.links))
     };
 
-    const faces = findFaces(json.nodes, edges);
     const edge1 = selectedEdges[0];
     const edge2 = selectedEdges[1];
 
+    // Get the 4 nodes involved in the transformation
+    let a = edge1.source;
+    let b = edge1.target;
+    let c = edge2.source;
+    let d = edge2.target;
+
+    // Try to determine orientation from face structure so that a/b and c/d
+    // are oriented oppositely around the shared face. If face detection fails
+    // (e.g. due to crossing node positions after dragging), skip the orientation
+    // step and proceed with the edges as-is.
+    const faces = findFaces(json.nodes, edges);
     let targetFace = null;
     for (const face of faces) {
         if (face.edges.includes(edge1) && face.edges.includes(edge2)) {
@@ -848,30 +852,19 @@ function performEdgeTransformation() {
         }
     }
 
-    if (!targetFace) {
-        alert("Selected edges do not lie on the same face.");
-        return;
-    }
-    
-    // Get the 4 nodes involved in the transformation
-    let a = edge1.source;
-    let b = edge1.target;
-    let c = edge2.source;
-    let d = edge2.target;
+    if (targetFace) {
+        const nodeSeq = targetFace.nodes.map(n => n.id);
+        const idxA = nodeSeq.indexOf(a.id);
+        const idxB = nodeSeq.indexOf(b.id);
+        const idxC = nodeSeq.indexOf(c.id);
+        const idxD = nodeSeq.indexOf(d.id);
 
-    // Check orientation
-    const nodeSeq = targetFace.nodes.map(n => n.id);
-    const idxA = nodeSeq.indexOf(a.id);
-    const idxB = nodeSeq.indexOf(b.id);
-    const idxC = nodeSeq.indexOf(c.id);
-    const idxD = nodeSeq.indexOf(d.id);
+        const isForwardAB = (idxA + 1) % nodeSeq.length === idxB;
+        const isForwardCD = (idxC + 1) % nodeSeq.length === idxD;
 
-    const isForwardAB = (idxA + 1) % nodeSeq.length === idxB;
-    const isForwardCD = (idxC + 1) % nodeSeq.length === idxD;
-
-    if (isForwardAB === isForwardCD) {
-        // If orientations match, swap c and d to make them opposite
-        [c, d] = [d, c];
+        if (isForwardAB === isForwardCD) {
+            [c, d] = [d, c];
+        }
     }
     
     // Remove the selected edges from the graph data arrays
@@ -1822,7 +1815,6 @@ async function startDFS() {
     
     document.getElementById('dfsBtn').disabled = true;
     document.getElementById('stopDfsBtn').disabled = false;
-    document.getElementById('dfsInfo').style.display = 'block';
     
     visitedStates.clear();
     transformationGraph = { nodes: [], links: [] };
@@ -1848,15 +1840,19 @@ async function startDFS() {
     restoreGraphState(initialState);
     redrawGraph();
     recalculateAllCycles();
+    renderSpans();
+    renderSpanCounts();
     updateSelectionInfo();
     updateDebugInfo();
-    
+
+
     if (!dfsStopRequested) {
         updateDFSInfo(visitedStates.size, transformationGraph.links.length, 'Complete');
     }
     
     dfsRunning = false;
     document.getElementById('dfsBtn').disabled = false;
+    document.getElementById('dfsBtn').textContent = 'DFS Search';
     document.getElementById('stopDfsBtn').disabled = true;
 }
 
@@ -1870,8 +1866,14 @@ async function dfsExplore(stateNode) {
     
     restoreGraphState(stateNode.state);
     redrawGraph();
+
+    // Yield so the browser repaints the new edge colors before doing
+    // the expensive cycle/span computation.
+    await sleep(0);
     recalculateAllCycles();
-    
+    renderSpans();
+    renderSpanCounts();
+
     const transformations = getAllValidTransformations();
     
     for (const transformation of transformations) {
@@ -1943,18 +1945,32 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Like updateSpans but defers all rendering until explicitly flushed.
+// Used inside DFS so we don't trigger expensive redraws for every state.
+function trackSpansSilent() {
+    const colorPairs = [['red','blue'], ['red','green'], ['blue','green']];
+    colorPairs.forEach(function([c1, c2]) {
+        const span = findAlternatingCycles(json.nodes, edges, c1, c2);
+        if (span.length === 0) return;
+        const spanId = getCanonicalSpanId(span);
+        if (!uniqueSpans.some(s => s.id === spanId)) {
+            uniqueSpans.push({ id: spanId, span: span });
+        }
+    });
+}
+
 function updateDFSInfo(statesExplored, edgesFound, currentDepth) {
-    const infoDiv = document.getElementById('dfsInfo');
+    const dfsBtn = document.getElementById('dfsBtn');
     const graphInfoDiv = document.getElementById('transformationGraphInfo');
-    
-    if (infoDiv) {
+
+    if (dfsBtn) {
         if (typeof currentDepth === 'string') {
-            infoDiv.textContent = `DFS Status: ${currentDepth} | States: ${statesExplored} | Edges: ${edgesFound}`;
+            dfsBtn.textContent = `${currentDepth} | ${statesExplored} states | ${edgesFound} edges`;
         } else {
-            infoDiv.textContent = `DFS Status: Running (depth ${currentDepth}) | States: ${statesExplored}`;
+            dfsBtn.textContent = `Running… depth ${currentDepth} | ${statesExplored} states`;
         }
     }
-    
+
     if (graphInfoDiv) {
         graphInfoDiv.textContent = `States explored: ${statesExplored} | Edges: ${edgesFound}`;
     }
@@ -2069,5 +2085,38 @@ function clearTransformationGraphRender() {
     const renderDiv = document.getElementById('transformationGraphRender');
     if (!renderDiv) return;
     renderDiv.innerHTML = '';
+}
+
+function exportGraphJSON() {
+    // Sync node positions from the live D3 objects back into json.nodes
+    node.each(function(d) {
+        const n = json.nodes.find(function(n) { return n.id === d.id; });
+        if (n) { n.x = d.x; n.y = d.y; }
+    });
+
+    const exportData = {
+        nodes: json.nodes,
+        links: json.links
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'graph.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function exportGraphSVG() {
+    const svgEl = document.querySelector('svg');
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(svgEl);
+    const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'graph.svg';
+    a.click();
+    URL.revokeObjectURL(url);
 }
 

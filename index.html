@@ -27,17 +27,18 @@
                 </div>
             </div>
             <button id="undoBtn" disabled style="padding: 10px; background-color: #a29bfe; color: white; border: none; border-radius: 4px; cursor: pointer;">Undo</button>
+            <div class="dropdown" id="exportDropdown">
+                <button class="dropdown-btn" style="background-color: #00cec9; color: white;">Export ▾</button>
+                <div class="dropdown-menu">
+                    <button id="exportJsonBtn">Save as JSON</button>
+                    <button id="exportSvgBtn">Save as SVG</button>
+                </div>
+            </div>
             <button id="darkModeToggle" title="Toggle dark mode">🌙</button>
         </div>
         <div style="display: flex; gap: 5px;">
             <button id="dfsBtn" style="flex-grow: 1; padding: 10px; background-color: #00b894; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">DFS Search</button>
-            <button id="stopDfsBtn" disabled style="padding: 10px; background-color: #d63031; color: white; border: none; border-radius: 4px; cursor: pointer;">Stop DFS</button>
-        </div>
-        <div id="selectionInfo" style="padding: 8px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px;">
-            Select 2 edges for edge transform or 1 vertex for vertex/TF transform
-        </div>
-        <div id="dfsInfo" style="padding: 8px; background-color: #e8f8f5; border: 1px solid #00b894; border-radius: 4px; font-size: 12px; display: none;">
-            DFS Status: Ready
+            <button id="stopDfsBtn" disabled style="padding: 10px; background-color: #d63031; color: white; border: none; border-radius: 4px; cursor: pointer;">Stop</button>
         </div>
     </div>
 
@@ -79,6 +80,6 @@
         </div>
     </div>
     
-    <script src="visual.js?v=25"></script>
+    <script src="visual.js?v=26"></script>
 </body>
 </html> 
