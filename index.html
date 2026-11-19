@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>D3 Visualization</title>
     <script src="https://d3js.org/d3.v3.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="style.css?v=2">
 </head>
 <body>
     <div id="transformControls" style="position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 10px;">
@@ -42,8 +42,19 @@
         </div>
     </div>
 
-    <div id="spanCountsContainer" style="position: absolute; top: 10px; right: 440px; width: 120px; height: 620px; border: 2px solid #00b894; border-radius: 8px; padding: 10px; overflow-y: auto; background-color: #f0fff4;">
+    <div id="spanCountsContainer" style="position: absolute; top: 10px; right: 440px; width: 120px; height: 180px; border: 2px solid #00b894; border-radius: 8px; padding: 10px; overflow-y: auto; background-color: #f0fff4;">
         <h3 style="margin: 0 0 10px 0; color: #00b894;">Span Counts</h3>
+    </div>
+
+    <div id="hamiltonComplementContainer" style="position: absolute; top: 200px; right: 440px; width: 120px; height: 430px; border: 2px solid #00b894; border-radius: 8px; padding: 10px; overflow-y: auto; background-color: #f0fff4;">
+        <h3 style="margin: 0 0 10px 0; color: #00b894;">1-Cycle (j, k)</h3>
+    </div>
+
+    <div id="hamiltonComplementGrid" style="position: absolute; top: 640px; right: 10px; width: 550px; max-height: 250px; border: 2px solid #00b894; border-radius: 8px; padding: 10px; overflow: auto; background-color: #f0fff4;">
+        <h3 style="margin: 0 0 10px 0; color: #00b894;">1-Cycle (j, k) / 6</h3>
+        <div id="hamiltonComplementGridBody">
+            <p style="margin: 4px 0; font-size: 12px;">Shown after DFS completes.</p>
+        </div>
     </div>
 
     <div id="spansContainer" style="position: absolute; top: 10px; right: 230px; width: 200px; height: 620px; border: 2px solid #6c5ce7; border-radius: 8px; padding: 10px; overflow-y: auto; background-color: #f0f0ff;">
@@ -64,7 +75,7 @@
         </div>
     </div>
     
-    <div id="transformationGraphContainer" style="position: absolute; top: 720px; left: 10px; width: 940px; height: 500px; border: 2px solid #636e72; border-radius: 8px; padding: 15px; background-color: #f5f5f5;">
+    <div id="transformationGraphContainer" style="position: absolute; top: 960px; left: 10px; width: 940px; height: 500px; border: 2px solid #636e72; border-radius: 8px; padding: 15px; background-color: #f5f5f5;">
         <h3 style="margin: 0 0 10px 0; color: #2d3436;">Transformation Graph Statistics</h3>
         <div id="transformationGraphInfo" style="font-size: 13px; color: #2d3436; line-height: 1.6;">
             States explored: 0 | Edges: 0
@@ -80,6 +91,6 @@
         </div>
     </div>
     
-    <script src="visual.js?v=26"></script>
+    <script src="visual.js?v=28"></script>
 </body>
 </html> 

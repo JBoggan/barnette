@@ -40,6 +40,30 @@ body.dark-mode #spanCountsContainer {
   color: #e0e0e0 !important;
 }
 
+body.dark-mode #hamiltonComplementContainer,
+body.dark-mode #hamiltonComplementGrid {
+  background-color: #1a2e1a !important;
+  border-color: #00b894 !important;
+  color: #e0e0e0 !important;
+}
+
+#hamiltonComplementGrid table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+#hamiltonComplementGrid th,
+#hamiltonComplementGrid td {
+  border: 1px solid #00b894;
+  padding: 4px 8px;
+  text-align: center;
+  min-width: 28px;
+}
+
+#hamiltonComplementGrid td.zero {
+  color: #b2bec3;
+}
+
 body.dark-mode #spansContainer {
   background-color: #1a1a2e !important;
   border-color: #6c5ce7 !important;
@@ -49,6 +73,21 @@ body.dark-mode #spansContainer {
 body.dark-mode #spansContainer h3,
 body.dark-mode #spanCountsContainer h3 {
   color: #a29bfe !important;
+}
+
+body.dark-mode #hamiltonComplementContainer h3,
+body.dark-mode #hamiltonComplementGrid h3 {
+  color: #55efc4 !important;
+}
+
+body.dark-mode #hamiltonComplementGrid th,
+body.dark-mode #hamiltonComplementGrid td {
+  border-color: #00b894;
+  color: #e0e0e0;
+}
+
+body.dark-mode #hamiltonComplementGrid td.zero {
+  color: #636e72;
 }
 
 body.dark-mode .span-item {

@@ -531,8 +531,11 @@ var selectedVertex = null;
 var nextNodeId = 9; // Start after existing nodes
 var previousState = null;
 var uniqueSpans = [];
+var hamiltonComplementCounts = {};
+var talliedHamiltonStates = new Set();
 
 document.addEventListener('DOMContentLoaded', (event) => {
+    renderHamiltonComplements();
     recalculateAllCycles();
 
     // Dropdown toggle logic
@@ -950,7 +953,7 @@ function performEdgeTransformation() {
     redrawGraph();
     
     // Recalculate all cycles and clear spans
-    uniqueSpans = [];
+    resetSpanCollection();
     recalculateAllCycles();
     renderSpanCounts(); // Clear counts
     
@@ -1073,7 +1076,7 @@ function performVertexTransformation() {
     redrawGraph();
     
     // Recalculate all cycles and clear spans
-    uniqueSpans = [];
+    resetSpanCollection();
     recalculateAllCycles();
     renderSpanCounts();
     
@@ -1111,7 +1114,7 @@ function loadGraph(graphData) {
     redrawGraph();
     updateDebugInfo();
 
-    uniqueSpans = [];
+    resetSpanCollection();
     setTimeout(function() {
         recalculateAllCycles();
         renderSpanCounts();
@@ -1274,7 +1277,7 @@ function performTFInflation() {
     redrawGraph();
     updateDebugInfo();
 
-    uniqueSpans = [];
+    resetSpanCollection();
     setTimeout(function() {
         recalculateAllCycles();
         renderSpanCounts();
@@ -1344,11 +1347,13 @@ function redrawGraph() {
         .attr("y", function(d) { return (d.source.y + d.target.y + 10) / 2; });
 }
 
-function displayTwoColorAlternatingCycles(color1, color2, containerId) {
+function displayTwoColorAlternatingCycles(color1, color2, containerId, cycles) {
     const containerDiv = document.getElementById(containerId);
     if (!containerDiv) return;
 
-    const cycles = findAlternatingCycles(json.nodes, edges, color1, color2);
+    if (!cycles) {
+        cycles = findAlternatingCycles(json.nodes, edges, color1, color2);
+    }
 
     // Clear previous results but keep the header
     const header = containerDiv.querySelector('h3');
@@ -1498,13 +1503,18 @@ function swapCycleColors(cycle, color1, color2) {
 }
 
 function recalculateAllCycles() {
-    // Recalculate and display cycles for all three color combinations
-    displayTwoColorAlternatingCycles('red', 'blue', 'redBlueCycles');
-    displayTwoColorAlternatingCycles('red', 'green', 'redGreenCycles');
-    displayTwoColorAlternatingCycles('blue', 'green', 'blueGreenCycles');
-    updateSpans('red', 'blue');
-    updateSpans('red', 'green');
-    updateSpans('blue', 'green');
+    const colorPairs = [
+        ['red', 'blue', 'redBlueCycles'],
+        ['red', 'green', 'redGreenCycles'],
+        ['blue', 'green', 'blueGreenCycles']
+    ];
+    const cycleCounts = colorPairs.map(([color1, color2, containerId]) => {
+        const cycles = findAlternatingCycles(json.nodes, edges, color1, color2);
+        displayTwoColorAlternatingCycles(color1, color2, containerId, cycles);
+        updateSpans(color1, color2, cycles);
+        return cycles.length;
+    });
+    tallyHamiltonComplement(cycleCounts);
 }
 
 function getCurrentSpan() {
@@ -1549,8 +1559,10 @@ function getCanonicalSpanId(span) {
     return canonicalCycles.join(';');
 }
 
-function updateSpans(color1, color2) {
-    const currentSpan = findAlternatingCycles(json.nodes, edges, color1, color2);
+function updateSpans(color1, color2, currentSpan) {
+    if (!currentSpan) {
+        currentSpan = findAlternatingCycles(json.nodes, edges, color1, color2);
+    }
     if (currentSpan.length === 0) return;
 
     const spanId = getCanonicalSpanId(currentSpan);
@@ -1593,6 +1605,143 @@ function renderSpans() {
 
         spansContainer.appendChild(spanDiv);
     });
+}
+
+function resetSpanCollection() {
+    uniqueSpans = [];
+    hamiltonComplementCounts = {};
+    talliedHamiltonStates.clear();
+    renderHamiltonComplements();
+    clearHamiltonComplementGrid('Shown after DFS completes.');
+}
+
+// When one span is a single cycle, the other two spans have j and k cycles.
+// Record (j, k) with j <= k, once per coloring.
+function complementPairKey(cycleCounts) {
+    const oneIndex = cycleCounts.indexOf(1);
+    if (oneIndex === -1) return null;
+    const rest = cycleCounts.filter((_, i) => i !== oneIndex);
+    rest.sort((a, b) => a - b);
+    return rest[0] + ',' + rest[1];
+}
+
+function tallyHamiltonComplement(cycleCounts) {
+    const key = complementPairKey(cycleCounts);
+    if (!key) return;
+
+    const hash = getStateHash(json.nodes, json.links);
+    if (talliedHamiltonStates.has(hash)) return;
+    talliedHamiltonStates.add(hash);
+
+    hamiltonComplementCounts[key] = (hamiltonComplementCounts[key] || 0) + 1;
+    renderHamiltonComplements();
+}
+
+function renderHamiltonComplements() {
+    const container = document.getElementById('hamiltonComplementContainer');
+    if (!container) return;
+
+    container.querySelectorAll('p').forEach(el => el.remove());
+
+    const keys = Object.keys(hamiltonComplementCounts).sort((a, b) => {
+        const [aj, ak] = a.split(',').map(Number);
+        const [bj, bk] = b.split(',').map(Number);
+        return aj - bj || ak - bk;
+    });
+
+    if (keys.length === 0) {
+        const empty = document.createElement('p');
+        empty.textContent = 'None yet.';
+        empty.style.cssText = 'margin: 4px 0; font-size: 12px; color: #636e72;';
+        container.appendChild(empty);
+        return;
+    }
+
+    keys.forEach(key => {
+        const [j, k] = key.split(',');
+        const p = document.createElement('p');
+        p.style.cssText = 'margin: 4px 0; font-size: 12px;';
+        p.textContent = `(${j}, ${k}) × ${hamiltonComplementCounts[key]}`;
+        container.appendChild(p);
+    });
+
+    const total = Object.values(hamiltonComplementCounts).reduce((sum, n) => sum + n, 0);
+    const totalP = document.createElement('p');
+    totalP.style.cssText = 'margin: 8px 0 0 0; font-size: 12px; font-weight: bold;';
+    totalP.textContent = `${total} state${total === 1 ? '' : 's'}`;
+    container.appendChild(totalP);
+}
+
+function formatSixth(count) {
+    const scaled = Math.round((count / 6) * 1000) / 1000;
+    return String(scaled);
+}
+
+function clearHamiltonComplementGrid(message) {
+    const body = document.getElementById('hamiltonComplementGridBody');
+    if (!body) return;
+    body.innerHTML = '';
+    if (message) {
+        const p = document.createElement('p');
+        p.textContent = message;
+        p.style.cssText = 'margin: 4px 0; font-size: 12px;';
+        body.appendChild(p);
+    }
+}
+
+// Rows are j, columns are k, with j <= k. Each cell is the state count divided by 6.
+function renderHamiltonComplementGrid() {
+    const body = document.getElementById('hamiltonComplementGridBody');
+    if (!body) return;
+    body.innerHTML = '';
+
+    const entries = Object.entries(hamiltonComplementCounts).map(([key, count]) => {
+        const [j, k] = key.split(',').map(Number);
+        return { j, k, count };
+    });
+
+    if (entries.length === 0) {
+        clearHamiltonComplementGrid('No 1-cycle states.');
+        return;
+    }
+
+    const minJ = Math.min(...entries.map(entry => entry.j));
+    const maxK = Math.max(...entries.map(entry => entry.k));
+    const lookup = {};
+    entries.forEach(entry => {
+        lookup[entry.j + ',' + entry.k] = entry.count;
+    });
+
+    const table = document.createElement('table');
+    const header = document.createElement('tr');
+    const corner = document.createElement('th');
+    corner.textContent = 'j \\ k';
+    header.appendChild(corner);
+    for (let k = minJ; k <= maxK; k++) {
+        const th = document.createElement('th');
+        th.textContent = String(k);
+        header.appendChild(th);
+    }
+    table.appendChild(header);
+
+    for (let j = minJ; j <= maxK; j++) {
+        const row = document.createElement('tr');
+        const rowHeader = document.createElement('th');
+        rowHeader.textContent = String(j);
+        row.appendChild(rowHeader);
+        for (let k = minJ; k <= maxK; k++) {
+            const cell = document.createElement('td');
+            if (j <= k) {
+                const count = lookup[j + ',' + k] || 0;
+                cell.textContent = formatSixth(count);
+                if (count === 0) cell.className = 'zero';
+            }
+            row.appendChild(cell);
+        }
+        table.appendChild(row);
+    }
+
+    body.appendChild(table);
 }
 
 function renderSpanCounts() {
@@ -1819,6 +1968,7 @@ async function startDFS() {
     visitedStates.clear();
     transformationGraph = { nodes: [], links: [] };
     stateIdCounter = 0;
+    clearHamiltonComplementGrid('Shown after DFS completes.');
     
     const initialState = cloneGraphState();
     const initialHash = getStateHash(initialState.nodes, initialState.links);
@@ -1848,6 +1998,7 @@ async function startDFS() {
 
     if (!dfsStopRequested) {
         updateDFSInfo(visitedStates.size, transformationGraph.links.length, 'Complete');
+        renderHamiltonComplementGrid();
     }
     
     dfsRunning = false;
